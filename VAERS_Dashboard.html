@@ -245,48 +245,48 @@
   <div class="page active" id="page-overview">
     <div class="content">
 
-      <!-- KPI Strip -->
+      <!-- KPI Strip — matches Power BI Page 1 exactly -->
       <div class="kpi-strip">
         <div class="kpi-card blue">
-          <div class="kpi-value">53,760+</div>
-          <div class="kpi-label">Total Records</div>
-          <div class="kpi-sub">2024 VAERS Dataset</div>
+          <div class="kpi-value">38K</div>
+          <div class="kpi-label">Sum of Total Cases</div>
+          <div class="kpi-sub">Vaccine-level aggregation</div>
         </div>
         <div class="kpi-card orange">
-          <div class="kpi-value">4,911</div>
-          <div class="kpi-label">Specific Admin Errors</div>
-          <div class="kpi-sub">5 classified error types</div>
+          <div class="kpi-value">221K</div>
+          <div class="kpi-label">Sum of Total VSRI</div>
+          <div class="kpi-sub">Cumulative severity score</div>
         </div>
         <div class="kpi-card red">
-          <div class="kpi-value">9.1%</div>
-          <div class="kpi-label">Actionable Error Rate</div>
-          <div class="kpi-sub">of all adverse event reports</div>
+          <div class="kpi-value">5.17</div>
+          <div class="kpi-label">Average of Avg VSRI</div>
+          <div class="kpi-sub">Mean severity per vaccine</div>
         </div>
-        <div class="kpi-card red">
-          <div class="kpi-value">5.0</div>
-          <div class="kpi-label">Peak Avg Severity</div>
-          <div class="kpi-sub">WRONG_VACCINE &amp; WRONG_DOSE</div>
+        <div class="kpi-card green">
+          <div class="kpi-value">53K</div>
+          <div class="kpi-label">Sum of Count</div>
+          <div class="kpi-sub">Total adverse event records</div>
         </div>
         <div class="kpi-card purple">
-          <div class="kpi-value">2,014</div>
+          <div class="kpi-value">2K</div>
           <div class="kpi-label">Expired Vaccine Cases</div>
-          <div class="kpi-sub">Highest volume specific error</div>
+          <div class="kpi-sub">Sum of Count</div>
         </div>
       </div>
 
-      <!-- Row 1: Bar + Donut -->
+      <!-- Row 1: VSRI Vaccine Bar + Donut Score (matches Power BI Page 1 layout) -->
       <div class="chart-grid-2">
         <div class="chart-panel">
           <div class="chart-header">
-            <div class="chart-title">Error Report Count by Type</div>
-            <span class="chart-badge cb-orange" id="count-badge">6 error types</span>
+            <div class="chart-title">Vaccine Safety Risk Index (VSRI)</div>
+            <span class="chart-badge cb-blue">Sum of Avg VSRI</span>
           </div>
-          <div class="chart-sub">Number of VAERS reports per error classification · 2024</div>
-          <div class="chart-body"><div class="canvas-wrap"><canvas id="barCount" height="230"></canvas></div></div>
+          <div class="chart-sub">Average VSRI score per vaccine · Sorted descending · 2024 VAERS</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="vsriVaccineBar" height="230"></canvas></div></div>
         </div>
         <div class="chart-panel">
           <div class="chart-header">
-            <div class="chart-title">Cumulative Severity Score Share</div>
+            <div class="chart-title">Sum of Total Score by Error Type</div>
             <span class="chart-badge cb-red">Total score: 65,497</span>
           </div>
           <div class="chart-sub">Each slice = proportion of total severity burden · 2024 VAERS</div>
@@ -294,23 +294,23 @@
         </div>
       </div>
 
-      <!-- Row 2: Avg Score + VSRI Weights -->
+      <!-- Row 2: Count by Error Type (full bar) + Avg Severity -->
       <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">Sum of Count by Error Type</div>
+            <span class="chart-badge cb-orange" id="count-badge">6 error types</span>
+          </div>
+          <div class="chart-sub">Number of VAERS reports per error classification · 2024</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="barCount" height="230"></canvas></div></div>
+        </div>
         <div class="chart-panel">
           <div class="chart-header">
             <div class="chart-title">Average Severity Score per Error Type</div>
             <span class="chart-badge cb-red">Higher = more dangerous per case</span>
           </div>
-          <div class="chart-sub">Avg severity score assigned per report · VAEI pipeline · 2024</div>
+          <div class="chart-sub">Avg ERROR_SCORE assigned per report · VAEI pipeline · 2024</div>
           <div class="chart-body"><div class="canvas-wrap"><canvas id="avgScore" height="230"></canvas></div></div>
-        </div>
-        <div class="chart-panel">
-          <div class="chart-header">
-            <div class="chart-title">VSRI Severity Weight Breakdown</div>
-            <span class="chart-badge cb-blue">Max 31 pts / patient</span>
-          </div>
-          <div class="chart-sub">Points assigned per clinical outcome in VSRI formula · KPI 1</div>
-          <div class="chart-body"><div class="canvas-wrap"><canvas id="vsriWeights" height="230"></canvas></div></div>
         </div>
       </div>
 
@@ -340,22 +340,23 @@
 
       <!-- Row 5: Tables -->
       <div class="chart-grid-2">
+        <!-- Regulatory Watchlist (matches Power BI Page 2 exactly) -->
         <div class="chart-panel">
           <div class="chart-header">
-            <div class="chart-title">VAEI Output — Full Regulatory Watchlist</div>
+            <div class="chart-title">Regulatory Watchlist — VAEI Output</div>
             <span class="chart-badge cb-blue">VAEI_OUTPUT.csv · 7 transformers</span>
           </div>
-          <div class="chart-sub">Final ranked output from IICS VAEI pipeline · 2024 VAERS</div>
+          <div class="chart-sub">Ranked output from IICS VAEI pipeline · 2024 VAERS</div>
           <div class="chart-body">
             <table class="data-table">
-              <thead><tr><th>Rank</th><th>Error Type</th><th class="right">Count</th><th class="right">Total Score</th><th class="right">Avg Score</th><th class="center">Risk</th></tr></thead>
+              <thead><tr><th>Error Type</th><th class="right">Count</th><th class="right">Total Score</th><th class="right">Avg Score</th></tr></thead>
               <tbody>
-                <tr><td>1</td><td>OTHER ERROR</td><td class="right">47,849</td><td class="right">47,849 (73.1%)</td><td class="right">1.0</td><td class="center"><span class="pill pill-low">LOW</span></td></tr>
-                <tr><td>2</td><td>EXPIRED VACCINE</td><td class="right">2,014</td><td class="right">6,042 (9.2%)</td><td class="right">3.0</td><td class="center"><span class="pill pill-moderate">MODERATE</span></td></tr>
-                <tr style="background:#fff8f8"><td>3</td><td>WRONG VACCINE</td><td class="right">707</td><td class="right">3,535 (5.4%)</td><td class="right">5.0</td><td class="center"><span class="pill pill-critical">CRITICAL</span></td></tr>
-                <tr><td>4</td><td>WRONG STORAGE</td><td class="right">1,064</td><td class="right">3,192 (4.9%)</td><td class="right">3.0</td><td class="center"><span class="pill pill-moderate">MODERATE</span></td></tr>
-                <tr><td>5</td><td>WRONG AGE GROUP</td><td class="right">751</td><td class="right">3,004 (4.6%)</td><td class="right">4.0</td><td class="center"><span class="pill pill-high">HIGH</span></td></tr>
-                <tr style="background:#fff8f8"><td>6</td><td>WRONG DOSE</td><td class="right">375</td><td class="right">1,875 (2.9%)</td><td class="right">5.0</td><td class="center"><span class="pill pill-critical">CRITICAL</span></td></tr>
+                <tr><td>OTHER_ERROR</td><td class="right">47,849</td><td class="right">47,849</td><td class="right">1</td></tr>
+                <tr><td>EXPIRED_VACCINE</td><td class="right">2,014</td><td class="right">6,042</td><td class="right">3</td></tr>
+                <tr><td>WRONG_STORAGE</td><td class="right">1,064</td><td class="right">3,192</td><td class="right">3</td></tr>
+                <tr><td>WRONG_AGE_GROUP</td><td class="right">751</td><td class="right">3,004</td><td class="right">4</td></tr>
+                <tr style="background:#fff8f8"><td>WRONG_VACCINE</td><td class="right">707</td><td class="right">3,535</td><td class="right">5</td></tr>
+                <tr style="background:#fff8f8"><td>WRONG_DOSE</td><td class="right">375</td><td class="right">1,875</td><td class="right">5</td></tr>
               </tbody>
             </table>
           </div>
@@ -866,14 +867,21 @@
 // DATA
 // ═════════════════════════════════════════════════
 const ALL_ERRORS = [
-  { type:"OTHER ERROR",     count:47849, total:47849, avg:1.0 },
-  { type:"EXPIRED VACCINE", count:2014,  total:6042,  avg:3.0 },
-  { type:"WRONG VACCINE",   count:707,   total:3535,  avg:5.0 },
-  { type:"WRONG STORAGE",   count:1064,  total:3192,  avg:3.0 },
-  { type:"WRONG AGE GROUP", count:751,   total:3004,  avg:4.0 },
-  { type:"WRONG DOSE",      count:375,   total:1875,  avg:5.0 },
+  { type:"OTHER_ERROR",     count:47849, total:47849, avg:1.0 },
+  { type:"EXPIRED_VACCINE", count:2014,  total:6042,  avg:3.0 },
+  { type:"WRONG_STORAGE",   count:1064,  total:3192,  avg:3.0 },
+  { type:"WRONG_AGE_GROUP", count:751,   total:3004,  avg:4.0 },
+  { type:"WRONG_VACCINE",   count:707,   total:3535,  avg:5.0 },
+  { type:"WRONG_DOSE",      count:375,   total:1875,  avg:5.0 },
 ];
-const SPECIFIC = ALL_ERRORS.filter(d => d.type !== "OTHER ERROR");
+const SPECIFIC = ALL_ERRORS.filter(d => d.type !== "OTHER_ERROR");
+
+// VSRI per-vaccine data (matches Power BI Page 1 bar chart exactly)
+const VSRI_VACCINES = [
+  { name:"COVID19 (PFIZER)",  avgVSRI:5.57 },
+  { name:"COVID19 (MODERNA)", avgVSRI:4.88 },
+  { name:"RSV (AREXVY)",      avgVSRI:3.41 },
+];
 
 const TREND_ALL = [
   { v:"PFIZER",    r:[4.80,6.20,8.50], trend:"INCREASING",  delta:"+3.7" },
@@ -959,12 +967,23 @@ function makeBar(id, labels, data, colors, horizontal) {
 // ═════════════════════════════════════════════════
 // OVERVIEW PAGE CHARTS
 // ═════════════════════════════════════════════════
-let barCountChart, donutChart, avgChart, vsriChart, dualChart, trendChart;
+let barCountChart, donutChart, avgChart, vsriVaccineBarChart, dualChart, trendChart;
 
 function initOverviewCharts() {
+  // VSRI Vaccine bar — matches Power BI Page 1 left chart
+  vsriVaccineBarChart = new Chart(document.getElementById("vsriVaccineBar"), {
+    type:"bar",
+    data:{ labels:VSRI_VACCINES.map(x=>x.name), datasets:[{ data:VSRI_VACCINES.map(x=>x.avgVSRI), backgroundColor:["#0078d4","#2196f3","#64b5f6"], borderRadius:4, borderSkipped:false }] },
+    options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>" Avg VSRI: "+c.parsed.x.toFixed(2) } } },
+      scales:{ x:{ grid:{color:"#f0f0f0"}, max:7, title:{display:true,text:"Sum of Avg VSRI",font:{size:11}} }, y:{grid:{display:false}} } }
+  });
+
   const d = getFilteredData();
+  // Count by error type bar (matches Power BI Page 1 bottom chart)
   barCountChart = makeBar("barCount", d.map(x=>x.type), d.map(x=>x.count), d.map((_,i)=>PALETTE[i%PALETTE.length]), true);
 
+  // Score donut (matches Power BI Page 1 right chart)
   donutChart = new Chart(document.getElementById("donutScore"), {
     type:"doughnut",
     data:{ labels:d.map(x=>x.type), datasets:[{ data:d.map(x=>x.total), backgroundColor:PALETTE, borderWidth:2, borderColor:"#fff", hoverOffset:8 }] },
@@ -975,15 +994,6 @@ function initOverviewCharts() {
 
   avgChart = makeBar("avgScore", d.map(x=>x.type), d.map(x=>x.avg),
     d.map(x=> x.avg===5?"#c0392b":x.avg===4?"#e67e22":x.avg===3?"#f1c40f":"#6b7280"), false);
-
-  vsriChart = new Chart(document.getElementById("vsriWeights"), {
-    type:"bar",
-    data:{ labels:["Death","Life-Threatening","Hospitalisation","ER Visit","Hosp >7 days"],
-      datasets:[{ data:[10,8,6,4,3], backgroundColor:["#c0392b","#e74c3c","#e67e22","#f39c12","#f1c40f"], borderRadius:4 }] },
-    options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>" Weight: "+c.parsed.x+" pts" } } },
-      scales:{ x:{ grid:{color:"#f0f0f0"}, max:12, ticks:{ callback:v=>v+" pts" } }, y:{grid:{display:false}} } }
-  });
 
   dualChart = new Chart(document.getElementById("dualBar"), {
     type:"bar",
