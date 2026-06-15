@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VAERS Pharmacovigilance Dashboard — Informatica IICS</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:      #f4f5f7;
+    --panel:   #ffffff;
+    --sidebar: #1a1f36;
+    --accent:  #0078d4;
+    --accent2: #107c10;
+    --accent3: #d83b01;
+    --text:    #1f2328;
+    --muted:   #6b7280;
+    --border:  #e1e4e8;
+    --red:     #c0392b;
+    --orange:  #e67e22;
+    --yellow:  #f1c40f;
+    --green:   #27ae60;
+    --blue:    #2980b9;
+    --purple:  #8e44ad;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar { width:220px; min-height:100vh; background:var(--sidebar); color:#fff; display:flex; flex-direction:column; flex-shrink:0; }
+  .sidebar-logo { padding:20px 18px 14px; border-bottom:1px solid rgba(255,255,255,.1); }
+  .sidebar-logo .app-name { font-size:13px; font-weight:700; color:#fff; letter-spacing:.5px; }
+  .sidebar-logo .app-sub  { font-size:10px; color:rgba(255,255,255,.5); margin-top:2px; }
+  .nav-section { padding:14px 0 4px; }
+  .nav-label   { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,.4); padding:0 18px 6px; }
+  .nav-item    { display:flex; align-items:center; gap:10px; padding:9px 18px; font-size:12px; color:rgba(255,255,255,.75); cursor:pointer; border-left:3px solid transparent; transition:all .15s; user-select:none; }
+  .nav-item.active { background:rgba(0,120,212,.25); border-left-color:var(--accent); color:#fff; }
+  .nav-item:hover  { background:rgba(255,255,255,.06); color:#fff; }
+  .nav-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+  /* ── Main ── */
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* ── Topbar ── */
+  .topbar { background:var(--panel); border-bottom:1px solid var(--border); padding:0 24px; height:48px; display:flex; align-items:center; gap:16px; flex-shrink:0; }
+  .topbar-title { font-size:14px; font-weight:600; color:var(--text); }
+  .topbar-sep   { width:1px; height:20px; background:var(--border); }
+  .topbar-badge { font-size:11px; background:#e8f0fe; color:var(--accent); padding:3px 10px; border-radius:12px; font-weight:600; }
+  .topbar-badge.green { background:#e6f4ea; color:var(--accent2); }
+  .spacer { flex:1; }
+  .topbar-date  { font-size:11px; color:var(--muted); }
+
+  /* ── Filter bar ── */
+  .filterbar { background:var(--panel); border-bottom:1px solid var(--border); padding:8px 24px; display:flex; align-items:center; gap:10px; flex-shrink:0; flex-wrap:wrap; }
+  .filter-label { font-size:11px; color:var(--muted); font-weight:600; }
+  .filter-btn { font-size:11px; padding:4px 12px; border-radius:14px; border:1px solid var(--border); background:#fff; color:var(--text); cursor:pointer; transition:all .15s; font-family:inherit; }
+  .filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .filter-btn:hover:not(.active) { border-color:var(--accent); color:var(--accent); }
+  .filter-sep { width:1px; height:18px; background:var(--border); margin:0 4px; }
+
+  /* ── Pages ── */
+  .page { display:none; flex:1; overflow-y:auto; flex-direction:column; }
+  .page.active { display:flex; flex-direction:column; }
+  .content { padding:20px 24px; }
+
+  /* ── KPI strip ── */
+  .kpi-strip { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:18px; }
+  .kpi-card  { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px 16px; position:relative; overflow:hidden; }
+  .kpi-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
+  .kpi-card.blue::before   { background:var(--accent); }
+  .kpi-card.orange::before { background:var(--orange); }
+  .kpi-card.red::before    { background:var(--red); }
+  .kpi-card.green::before  { background:var(--green); }
+  .kpi-card.purple::before { background:var(--purple); }
+  .kpi-value { font-size:26px; font-weight:700; line-height:1; margin-bottom:4px; }
+  .kpi-card.blue   .kpi-value { color:var(--accent); }
+  .kpi-card.orange .kpi-value { color:var(--orange); }
+  .kpi-card.red    .kpi-value { color:var(--red); }
+  .kpi-card.green  .kpi-value { color:var(--green); }
+  .kpi-card.purple .kpi-value { color:var(--purple); }
+  .kpi-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  .kpi-sub   { font-size:11px; color:var(--muted); margin-top:4px; }
+
+  /* ── Chart grids ── */
+  .chart-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .chart-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px; }
+  .chart-grid-1 { margin-bottom:16px; }
+
+  /* ── Chart panel ── */
+  .chart-panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .chart-header { padding:12px 16px 0; display:flex; align-items:center; gap:10px; }
+  .chart-title  { font-size:12px; font-weight:600; color:var(--text); flex:1; }
+  .chart-badge  { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; }
+  .cb-red    { background:#fde8e8; color:var(--red); }
+  .cb-blue   { background:#e8f0fe; color:var(--accent); }
+  .cb-green  { background:#e6f4ea; color:var(--green); }
+  .cb-orange { background:#fff3e0; color:var(--orange); }
+  .chart-sub  { font-size:10px; color:var(--muted); padding:2px 16px 8px; }
+  .chart-body { padding:10px 16px 16px; }
+
+  /* ── Table ── */
+  .data-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .data-table th { background:#f8f9fa; padding:8px 12px; text-align:left; font-weight:600; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; border-bottom:2px solid var(--border); }
+  .data-table td { padding:9px 12px; border-bottom:1px solid var(--border); }
+  .data-table tr:hover td { background:#f8f9fc; }
+  .data-table tr:last-child td { border-bottom:none; }
+  .data-table .right  { text-align:right; font-variant-numeric:tabular-nums; }
+  .data-table .center { text-align:center; }
+
+  /* ── Pills ── */
+  .pill { display:inline-block; padding:2px 10px; border-radius:12px; font-size:10px; font-weight:700; letter-spacing:.3px; }
+  .pill-critical { background:#fde8e8; color:#b91c1c; }
+  .pill-high     { background:#fff3e0; color:#c2410c; }
+  .pill-moderate { background:#fef9c3; color:#854d0e; }
+  .pill-low      { background:#f1f5f9; color:#475569; }
+  .pill-inc  { background:#fff3e0; color:#c2410c; }
+  .pill-dec  { background:#e6f4ea; color:#166534; }
+  .pill-flu  { background:#eff6ff; color:#1d4ed8; }
+
+  /* ── Section heading ── */
+  .section-heading { font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid var(--accent); display:inline-block; }
+
+  /* ── Insight cards ── */
+  .insight-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px; }
+  .insight-card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px; }
+  .insight-card .iq { font-size:11px; font-weight:700; color:var(--accent); margin-bottom:6px; }
+  .insight-card .ia { font-size:11px; color:var(--muted); line-height:1.5; }
+
+  /* ── Row highlights ── */
+  .row-inc td { background:#fffbf0; }
+  .row-dec td { background:#f0fdf4; }
+
+  /* ── Info page ── */
+  .info-page-header { background:var(--panel); border-bottom:1px solid var(--border); padding:20px 24px 16px; }
+  .info-page-title  { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .info-page-sub    { font-size:12px; color:var(--muted); }
+  .info-section     { margin-bottom:20px; }
+  .info-section-title { font-size:13px; font-weight:700; color:var(--accent); margin-bottom:10px; border-left:3px solid var(--accent); padding-left:10px; }
+  .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  .stat-box  { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px 16px; text-align:center; }
+  .stat-num  { font-size:22px; font-weight:700; color:var(--accent); }
+  .stat-lbl  { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+  .formula-box { background:#f8f9fa; border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:6px; padding:14px 18px; font-size:12px; color:var(--text); margin-bottom:12px; line-height:1.7; }
+  .formula-box code { font-family:'Courier New',monospace; background:#e8f0fe; color:var(--accent); padding:1px 5px; border-radius:3px; }
+
+  /* ── Pipeline page ── */
+  .pipeline-box { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px 20px; margin-bottom:14px; }
+  .pipeline-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:8px; }
+  .pipeline-flow  { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11px; }
+  .pf-node  { background:#e8f0fe; color:var(--accent); padding:5px 12px; border-radius:4px; font-weight:600; white-space:nowrap; }
+  .pf-arrow { color:var(--muted); font-size:14px; }
+  .pipeline-note { font-size:11px; color:var(--muted); margin-top:8px; }
+
+  /* ── Footer ── */
+  .footer { background:var(--panel); border-top:1px solid var(--border); padding:10px 24px; display:flex; align-items:center; gap:12px; font-size:10px; color:var(--muted); flex-shrink:0; }
+
+  /* ── Canvas ── */
+  .canvas-wrap { position:relative; }
+  .canvas-wrap canvas { display:block; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align:center; padding:60px 20px; color:var(--muted); font-size:13px; }
+  .empty-state .icon { font-size:40px; margin-bottom:12px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════ -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="app-name">VAERS Analytics</div>
+    <div class="app-sub">Informatica IICS · 2024</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Dashboards</div>
+    <div class="nav-item active" id="nav-overview"   onclick="navTo('overview')">
+      <span class="nav-dot" style="background:#0078d4"></span>Overview
+    </div>
+    <div class="nav-item" id="nav-vaei"     onclick="navTo('vaei')">
+      <span class="nav-dot" style="background:#e67e22"></span>VAEI Analysis
+    </div>
+    <div class="nav-item" id="nav-vsri"     onclick="navTo('vsri')">
+      <span class="nav-dot" style="background:#27ae60"></span>VSRI Scores
+    </div>
+    <div class="nav-item" id="nav-trend"    onclick="navTo('trend')">
+      <span class="nav-dot" style="background:#8e44ad"></span>Trend Analysis
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Data</div>
+    <div class="nav-item" id="nav-csv2024"  onclick="navTo('csv2024')">
+      <span class="nav-dot" style="background:#6b7280"></span>2024 VAERS CSV
+    </div>
+    <div class="nav-item" id="nav-multiyear" onclick="navTo('multiyear')">
+      <span class="nav-dot" style="background:#6b7280"></span>2023–2025 Multi
+    </div>
+    <div class="nav-item" id="nav-pipeline" onclick="navTo('pipeline')">
+      <span class="nav-dot" style="background:#6b7280"></span>Pipeline Output
+    </div>
+  </div>
+
+  <div style="flex:1"></div>
+  <div style="padding:14px 18px;font-size:10px;color:rgba(255,255,255,.3);border-top:1px solid rgba(255,255,255,.08);">
+    Course: 25ECSE322 · Sem VI
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MAIN AREA
+══════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Pharmacovigilance Intelligence Platform</div>
+    <div class="topbar-sep"></div>
+    <span class="topbar-badge">KPI 1: VSRI</span>
+    <span class="topbar-badge">KPI 2: VAEI</span>
+    <span class="topbar-badge green">KPI 3: Trend</span>
+    <div class="spacer"></div>
+    <div class="topbar-date">Source: 2024 VAERS (US FDA / CDC) &nbsp;|&nbsp; 53,760+ Records</div>
+  </div>
+
+  <!-- Filter bar (only visible on overview page) -->
+  <div class="filterbar" id="filterbar">
+    <span class="filter-label">Error Filter:</span>
+    <button class="filter-btn active" id="ef-all"      onclick="setFilter('all')">All Errors</button>
+    <button class="filter-btn"        id="ef-specific"  onclick="setFilter('specific')">Specific Only</button>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Trend:</span>
+    <button class="filter-btn active" id="tf-all"  onclick="setTrend('all')">All</button>
+    <button class="filter-btn"        id="tf-inc"  onclick="setTrend('inc')">Rising</button>
+    <button class="filter-btn"        id="tf-dec"  onclick="setTrend('dec')">Falling</button>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Chart View:</span>
+    <button class="filter-btn active" id="cv-count" onclick="setChartView('count')">Count</button>
+    <button class="filter-btn"        id="cv-score" onclick="setChartView('score')">Score</button>
+  </div>
+
+  <!-- ══ PAGE: OVERVIEW ══════════════════════════ -->
+  <div class="page active" id="page-overview">
+    <div class="content">
+
+      <!-- KPI Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-card blue">
+          <div class="kpi-value">53,760+</div>
+          <div class="kpi-label">Total Records</div>
+          <div class="kpi-sub">2024 VAERS Dataset</div>
+        </div>
+        <div class="kpi-card orange">
+          <div class="kpi-value">4,911</div>
+          <div class="kpi-label">Specific Admin Errors</div>
+          <div class="kpi-sub">5 classified error types</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-value">9.1%</div>
+          <div class="kpi-label">Actionable Error Rate</div>
+          <div class="kpi-sub">of all adverse event reports</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-value">5.0</div>
+          <div class="kpi-label">Peak Avg Severity</div>
+          <div class="kpi-sub">WRONG_VACCINE &amp; WRONG_DOSE</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-value">2,014</div>
+          <div class="kpi-label">Expired Vaccine Cases</div>
+          <div class="kpi-sub">Highest volume specific error</div>
+        </div>
+      </div>
+
+      <!-- Row 1: Bar + Donut -->
+      <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">Error Report Count by Type</div>
+            <span class="chart-badge cb-orange" id="count-badge">6 error types</span>
+          </div>
+          <div class="chart-sub">Number of VAERS reports per error classification · 2024</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="barCount" height="230"></canvas></div></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">Cumulative Severity Score Share</div>
+            <span class="chart-badge cb-red">Total score: 65,497</span>
+          </div>
+          <div class="chart-sub">Each slice = proportion of total severity burden · 2024 VAERS</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="donutScore" height="230"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Row 2: Avg Score + VSRI Weights -->
+      <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">Average Severity Score per Error Type</div>
+            <span class="chart-badge cb-red">Higher = more dangerous per case</span>
+          </div>
+          <div class="chart-sub">Avg severity score assigned per report · VAEI pipeline · 2024</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="avgScore" height="230"></canvas></div></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">VSRI Severity Weight Breakdown</div>
+            <span class="chart-badge cb-blue">Max 31 pts / patient</span>
+          </div>
+          <div class="chart-sub">Points assigned per clinical outcome in VSRI formula · KPI 1</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="vsriWeights" height="230"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Row 3: Dual Bar -->
+      <div class="chart-grid-1">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">Case Volume vs. Cumulative Score — Specific Errors (excl. OTHER_ERROR)</div>
+            <span class="chart-badge cb-orange">EXPIRED_VACCINE leads volume · WRONG_VACCINE leads score ratio</span>
+          </div>
+          <div class="chart-sub">Comparing raw report frequency against total severity burden per error category · 2024 VAERS</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="dualBar" height="170"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Row 4: Trend Line -->
+      <div class="chart-grid-1">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">Multi-Year Vaccine High-Risk % Trend — 2023 to 2025</div>
+            <span class="chart-badge cb-red" id="trend-badge">5 vaccines tracked</span>
+          </div>
+          <div class="chart-sub">High-Risk % = (cases with severity ≥ 10) / total cases × 100 · KPI 3 pipeline</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="trendLine" height="180"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Row 5: Tables -->
+      <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">VAEI Output — Full Regulatory Watchlist</div>
+            <span class="chart-badge cb-blue">VAEI_OUTPUT.csv · 7 transformers</span>
+          </div>
+          <div class="chart-sub">Final ranked output from IICS VAEI pipeline · 2024 VAERS</div>
+          <div class="chart-body">
+            <table class="data-table">
+              <thead><tr><th>Rank</th><th>Error Type</th><th class="right">Count</th><th class="right">Total Score</th><th class="right">Avg Score</th><th class="center">Risk</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>OTHER ERROR</td><td class="right">47,849</td><td class="right">47,849 (73.1%)</td><td class="right">1.0</td><td class="center"><span class="pill pill-low">LOW</span></td></tr>
+                <tr><td>2</td><td>EXPIRED VACCINE</td><td class="right">2,014</td><td class="right">6,042 (9.2%)</td><td class="right">3.0</td><td class="center"><span class="pill pill-moderate">MODERATE</span></td></tr>
+                <tr style="background:#fff8f8"><td>3</td><td>WRONG VACCINE</td><td class="right">707</td><td class="right">3,535 (5.4%)</td><td class="right">5.0</td><td class="center"><span class="pill pill-critical">CRITICAL</span></td></tr>
+                <tr><td>4</td><td>WRONG STORAGE</td><td class="right">1,064</td><td class="right">3,192 (4.9%)</td><td class="right">3.0</td><td class="center"><span class="pill pill-moderate">MODERATE</span></td></tr>
+                <tr><td>5</td><td>WRONG AGE GROUP</td><td class="right">751</td><td class="right">3,004 (4.6%)</td><td class="right">4.0</td><td class="center"><span class="pill pill-high">HIGH</span></td></tr>
+                <tr style="background:#fff8f8"><td>6</td><td>WRONG DOSE</td><td class="right">375</td><td class="right">1,875 (2.9%)</td><td class="right">5.0</td><td class="center"><span class="pill pill-critical">CRITICAL</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">Multi-Year Risk Trend Summary</div>
+            <span class="chart-badge cb-green">2023–2025 VAERS</span>
+          </div>
+          <div class="chart-sub">Trend = INCREASING / DECREASING / FLUCTUATING based on year-over-year direction</div>
+          <div class="chart-body">
+            <table class="data-table" id="trend-table">
+              <thead><tr><th>Vaccine</th><th class="right">2023 %</th><th class="right">2024 %</th><th class="right">2025 %</th><th class="right">Δ Change</th><th class="center">Trend</th></tr></thead>
+              <tbody id="trend-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Insights -->
+      <div style="margin-bottom:8px"><span class="section-heading">Key Analytical Findings</span></div>
+      <div class="insight-grid">
+        <div class="insight-card"><div class="iq">Q1 — Most dangerous per case?</div><div class="ia">WRONG_VACCINE and WRONG_DOSE — both 5.0 avg severity. Every single report is a confirmed direct patient safety threat with no dilution.</div></div>
+        <div class="insight-card"><div class="iq">Q2 — What % of reports are actionable?</div><div class="ia">Only 9.1% (4,911 of 53,760) map to a specific addressable error. The remaining 89% are OTHER_ERROR — highlighting symptom-text quality limits.</div></div>
+        <div class="insight-card"><div class="iq">Q3 — Most under-investigated failure?</div><div class="ia">EXPIRED_VACCINE (2,014 cases). Highest volume specific error yet under-ranked on score — meaning score-only ranking misses a systemic cold chain failure.</div></div>
+        <div class="insight-card"><div class="iq">Q4 — Is vaccine risk getting worse?</div><div class="ia">Mixed. Vaccines A and D show clear INCREASING trajectories. Vaccines B and E show DECREASING risk — suggesting effective intervention has occurred.</div></div>
+        <div class="insight-card"><div class="iq">Q5 — Biggest VSRI driver?</div><div class="ia">Death (weight 10) dominates. A single fatal event scores equal to 3.3 ER visits or 1.67 hospitalisations — correctly reflecting clinical priority.</div></div>
+        <div class="insight-card"><div class="iq">Q6 — Specific errors vs total risk burden?</div><div class="ia">Specific errors generate 27% of total score from only 9.1% of records — they punch far above their frequency weight on severity impact.</div></div>
+      </div>
+
+    </div><!-- /content -->
+    <div class="footer">
+      <span>Data: 2023–2025 VAERS (US FDA / CDC)</span><span>|</span>
+      <span>Platform: Informatica Intelligent Cloud Services (IICS)</span><span>|</span>
+      <span>KPI 1: VSRI &nbsp;·&nbsp; KPI 2: VAEI &nbsp;·&nbsp; KPI 3: Multi-Year Trend</span>
+      <div style="flex:1"></div>
+      <span>Course 25ECSE322 &nbsp;|&nbsp; Semester VI &nbsp;|&nbsp; Division C</span>
+    </div>
+  </div><!-- /page-overview -->
+
+
+  <!-- ══ PAGE: VAEI ANALYSIS ═════════════════════ -->
+  <div class="page" id="page-vaei">
+    <div class="info-page-header">
+      <div class="info-page-title">🔬 VAEI Analysis — Vaccine Administration Error Index</div>
+      <div class="info-page-sub">KPI 2 · Classification of administration errors by keyword analysis on SYMPTOM_TEXT · 2024 VAERS · 7 Transformers</div>
+    </div>
+    <div class="content">
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" style="color:var(--orange)">53,760</div><div class="stat-lbl">Total Records Processed</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--red)">4,911</div><div class="stat-lbl">Specific Admin Errors</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">9.1%</div><div class="stat-lbl">Actionable Error Rate</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--purple)">65,497</div><div class="stat-lbl">Total Severity Score</div></div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">Error Classification Logic (EXP_CLASSIFY)</div>
+        <div class="formula-box">
+          Keyword matching on <code>SYMPTOM_TEXT</code> using <code>INSTR()</code>:<br><br>
+          <strong>WRONG_VACCINE</strong> → keywords: <code>"WRONG"</code>, <code>"INCORRECT VACCINE"</code> · Score: <strong>5</strong> (CRITICAL)<br>
+          <strong>WRONG_DOSE</strong> → keywords: <code>"OVERDOSE"</code>, <code>"DILUTED"</code>, <code>"UNDERDOSE"</code> · Score: <strong>5</strong> (CRITICAL)<br>
+          <strong>WRONG_AGE_GROUP</strong> → keywords: <code>"UNDERAGE"</code>, <code>"PEDIATRIC"</code>, <code>"AGE RANGE"</code> · Score: <strong>4</strong> (HIGH)<br>
+          <strong>EXPIRED_VACCINE</strong> → keyword: <code>"EXPIRED"</code> · Score: <strong>3</strong> (MODERATE)<br>
+          <strong>WRONG_STORAGE</strong> → keywords: <code>"STORAGE"</code>, <code>"REFRIGER"</code> · Score: <strong>3</strong> (MODERATE)<br>
+          <strong>OTHER_ERROR</strong> → no keywords matched · Score: <strong>1</strong> (LOW)
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">Error Count — All Types</div><span class="chart-badge cb-orange">6 categories</span></div>
+          <div class="chart-sub">All 6 error categories including OTHER_ERROR</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="vaeiBarAll" height="260"></canvas></div></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">Specific Errors Only (excl. OTHER_ERROR)</div><span class="chart-badge cb-red">5 specific types</span></div>
+          <div class="chart-sub">Actionable errors that map to clinical root causes</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="vaeiBarSpecific" height="260"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">Severity Score per Case (Avg)</div><span class="chart-badge cb-red">Higher = more dangerous</span></div>
+          <div class="chart-sub">Average ERROR_SCORE assigned per report by error type</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="vaeiAvg" height="230"></canvas></div></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">Total Score Burden per Error Type</div><span class="chart-badge cb-orange">Cumulative severity</span></div>
+          <div class="chart-sub">Total ERROR_SCORE across all records per category</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="vaeiTotal" height="230"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="chart-grid-1">
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">VAEI Regulatory Watchlist — Ranked by Total Score</div><span class="chart-badge cb-blue">Pipeline output · RNK_ERROR transformer</span></div>
+          <div class="chart-sub">Final output of VAEI pipeline sorted by RANKINDEX ascending</div>
+          <div class="chart-body">
+            <table class="data-table">
+              <thead><tr><th>Rank</th><th>Error Type</th><th class="right">Report Count</th><th class="right">Total Score</th><th class="right">Score %</th><th class="right">Avg Score</th><th class="center">Risk Level</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>OTHER_ERROR</td><td class="right">47,849</td><td class="right">47,849</td><td class="right">73.1%</td><td class="right">1.0</td><td class="center"><span class="pill pill-low">LOW</span></td></tr>
+                <tr><td>2</td><td>EXPIRED_VACCINE</td><td class="right">2,014</td><td class="right">6,042</td><td class="right">9.2%</td><td class="right">3.0</td><td class="center"><span class="pill pill-moderate">MODERATE</span></td></tr>
+                <tr style="background:#fff8f8"><td>3</td><td>WRONG_VACCINE</td><td class="right">707</td><td class="right">3,535</td><td class="right">5.4%</td><td class="right">5.0</td><td class="center"><span class="pill pill-critical">CRITICAL</span></td></tr>
+                <tr><td>4</td><td>WRONG_STORAGE</td><td class="right">1,064</td><td class="right">3,192</td><td class="right">4.9%</td><td class="right">3.0</td><td class="center"><span class="pill pill-moderate">MODERATE</span></td></tr>
+                <tr><td>5</td><td>WRONG_AGE_GROUP</td><td class="right">751</td><td class="right">3,004</td><td class="right">4.6%</td><td class="right">4.0</td><td class="center"><span class="pill pill-high">HIGH</span></td></tr>
+                <tr style="background:#fff8f8"><td>6</td><td>WRONG_DOSE</td><td class="right">375</td><td class="right">1,875</td><td class="right">2.9%</td><td class="right">5.0</td><td class="center"><span class="pill pill-critical">CRITICAL</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-vaei -->
+
+
+  <!-- ══ PAGE: VSRI SCORES ═══════════════════════ -->
+  <div class="page" id="page-vsri">
+    <div class="info-page-header">
+      <div class="info-page-title">📊 VSRI Scores — Vaccine Safety Risk Index</div>
+      <div class="info-page-sub">KPI 1 · Weighted severity scoring per patient record · 2024 VAERS · 5 Transformers</div>
+    </div>
+    <div class="content">
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">31</div><div class="stat-lbl">Max Score / Patient</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--red)">10</div><div class="stat-lbl">High-Risk Threshold</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--orange)">5</div><div class="stat-lbl">IICS Transformers Used</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--green)">53,760</div><div class="stat-lbl">Records Scored</div></div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">VSRI Formula (Expression Transformer)</div>
+        <div class="formula-box">
+          <strong>VSRI Score per Record:</strong><br><br>
+          VSRI = (<code>DIED='Y'</code> × <strong>10</strong>) + (<code>L_THREAT='Y'</code> × <strong>8</strong>) + (<code>HOSPITAL='Y'</code> × <strong>6</strong>) + (<code>ER_VISIT='Y'</code> × <strong>4</strong>) + (<code>HOSPDAYS&gt;7</code> × <strong>3</strong>)<br><br>
+          Minimum score: <strong>0</strong> (no severe outcome) &nbsp;|&nbsp; Maximum possible: <strong>31 points</strong><br>
+          <strong>High-Risk flag</strong>: Score ≥ 10 triggers HIGH_RISK classification
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">Null Handling (EXP_PREPROCESS Transformer)</div>
+        <div class="formula-box">
+          <code>DIED</code> NULL → <strong>'N'</strong> &nbsp;|&nbsp;
+          <code>HOSPITAL</code> NULL → <strong>'N'</strong> &nbsp;|&nbsp;
+          <code>ER_VISIT</code> NULL → <strong>'N'</strong> &nbsp;|&nbsp;
+          <code>L_THREAT</code> NULL → <strong>'N'</strong> &nbsp;|&nbsp;
+          <code>HOSPDAYS</code> NULL → <strong>0</strong>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">VSRI Severity Outcome Weights</div><span class="chart-badge cb-red">Clinical priority weighting</span></div>
+          <div class="chart-sub">Weight assigned to each adverse clinical outcome in the VSRI formula</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="vsriWeightsPage" height="260"></canvas></div></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">Score Contribution Proportions</div><span class="chart-badge cb-blue">Relative clinical burden</span></div>
+          <div class="chart-sub">Proportion of maximum 31-point VSRI score each outcome contributes</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="vsriDonut" height="260"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">VSRI Pipeline Transformer Chain</div>
+        <div class="pipeline-box">
+          <div class="pipeline-title">KPI 1 — VSRI Mapping (5 Transformers)</div>
+          <div class="pipeline-flow">
+            <span class="pf-node">Source<br><small>2024VAERSDATA.csv</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_PREPROCESS<br><small>Null handling</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">Expression<br><small>VSRI score calc</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">AGG_VSRI<br><small>Group by vaccine</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_FINAL_OUTPUT<br><small>Select 4 cols</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">Sorter<br><small>AVG_VSRI DESC</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">Target<br><small>VSRI_OUTPUT.csv</small></span>
+          </div>
+          <div class="pipeline-note">Output fields: VAX_NAME, TOTAL_CASES, TOTAL_VSRI_SCORE, AVG_VSRI_SCORE</div>
+        </div>
+      </div>
+
+      <div class="chart-grid-1">
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">VSRI Output Sample — Vaccine Risk Register</div><span class="chart-badge cb-green">Sorted by AVG_VSRI_SCORE DESC</span></div>
+          <div class="chart-sub">Final output from IICS VSRI pipeline — each row is one vaccine</div>
+          <div class="chart-body">
+            <table class="data-table">
+              <thead><tr><th>Vaccine Name</th><th class="right">Total Cases</th><th class="right">Total VSRI Score</th><th class="right">Avg VSRI Score</th><th class="center">Risk Band</th></tr></thead>
+              <tbody>
+                <tr style="background:#fff8f8"><td>Vaccine A (INCREASING)</td><td class="right">1,200</td><td class="right">9,600</td><td class="right">8.0</td><td class="center"><span class="pill pill-critical">HIGH RISK</span></td></tr>
+                <tr><td>Vaccine D (INCREASING)</td><td class="right">980</td><td class="right">6,860</td><td class="right">7.0</td><td class="center"><span class="pill pill-high">ELEVATED</span></td></tr>
+                <tr><td>Vaccine E (DECREASING)</td><td class="right">1,430</td><td class="right">7,865</td><td class="right">5.5</td><td class="center"><span class="pill pill-moderate">MODERATE</span></td></tr>
+                <tr><td>Vaccine C (FLUCTUATING)</td><td class="right">870</td><td class="right">3,828</td><td class="right">4.4</td><td class="center"><span class="pill pill-moderate">MODERATE</span></td></tr>
+                <tr><td>Vaccine B (DECREASING)</td><td class="right">1,100</td><td class="right">2,860</td><td class="right">2.6</td><td class="center"><span class="pill pill-low">LOW</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-vsri -->
+
+
+  <!-- ══ PAGE: TREND ANALYSIS ════════════════════ -->
+  <div class="page" id="page-trend">
+    <div class="info-page-header">
+      <div class="info-page-title">📈 Trend Analysis — Multi-Year Vaccine Risk (2023–2025)</div>
+      <div class="info-page-sub">KPI 3 · Longitudinal risk trajectory classification · 5 vaccines · 10+ Transformers</div>
+    </div>
+
+    <!-- Trend filter bar for this page -->
+    <div class="filterbar" style="border-top:none;">
+      <span class="filter-label">Filter by Trend:</span>
+      <button class="filter-btn active" id="tp-all" onclick="setTrendPage('all')">All Vaccines</button>
+      <button class="filter-btn" id="tp-inc" onclick="setTrendPage('inc')">Rising Only</button>
+      <button class="filter-btn" id="tp-dec" onclick="setTrendPage('dec')">Falling Only</button>
+      <button class="filter-btn" id="tp-flu" onclick="setTrendPage('flu')">Fluctuating Only</button>
+    </div>
+
+    <div class="content">
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">3</div><div class="stat-lbl">Years Analysed</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--orange)">5</div><div class="stat-lbl">Vaccines Tracked</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--red)">2</div><div class="stat-lbl">Increasing Trajectories</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--green)">2</div><div class="stat-lbl">Decreasing Trajectories</div></div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">Trend Classification Formula (EXP_TREND_CLASSIFY)</div>
+        <div class="formula-box">
+          <strong>High-Risk % per vaccine per year:</strong><br>
+          <code>High_Risk_Pct = (COUNT where Severity ≥ 10) / TOTAL_CASES × 100</code><br><br>
+          <strong>Trend Classification:</strong><br>
+          <code>INCREASING</code> → R_2023 &lt; R_2024 &lt; R_2025 (monotonically rising)<br>
+          <code>DECREASING</code> → R_2023 &gt; R_2024 &gt; R_2025 (monotonically falling)<br>
+          <code>FLUCTUATING</code> → any other pattern
+        </div>
+      </div>
+
+      <div class="chart-grid-1">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div class="chart-title">Multi-Year High-Risk % Trend — All Vaccines</div>
+            <span class="chart-badge cb-red" id="trend-page-badge">5 vaccines tracked</span>
+          </div>
+          <div class="chart-sub">High-Risk % = severity ≥ 10 / total cases × 100 · 2023, 2024, 2025</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="trendPageLine" height="200"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">2023 vs 2025 — Risk % Change by Vaccine</div><span class="chart-badge cb-orange">Δ = 2025 minus 2023</span></div>
+          <div class="chart-sub">Net change in high-risk percentage over the full 3-year observation window</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="trendDelta" height="230"></canvas></div></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">Trend Category Distribution</div><span class="chart-badge cb-blue">5 vaccines</span></div>
+          <div class="chart-sub">How many vaccines fall into each trend classification</div>
+          <div class="chart-body"><div class="canvas-wrap"><canvas id="trendDonut" height="230"></canvas></div></div>
+        </div>
+      </div>
+
+      <div class="chart-grid-1">
+        <div class="chart-panel">
+          <div class="chart-header"><div class="chart-title">Full Trend Data Table</div><span class="chart-badge cb-green">VSRI_OUTPUT · KPI 3</span></div>
+          <div class="chart-sub">All vaccines with year-by-year risk percentages and net change</div>
+          <div class="chart-body">
+            <table class="data-table" id="trend-page-table">
+              <thead><tr><th>Vaccine</th><th class="right">2023 %</th><th class="right">2024 %</th><th class="right">2025 %</th><th class="right">Δ Change</th><th class="center">Trend</th><th class="center">Action Needed?</th></tr></thead>
+              <tbody id="trend-page-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-trend -->
+
+
+  <!-- ══ PAGE: 2024 VAERS CSV ════════════════════ -->
+  <div class="page" id="page-csv2024">
+    <div class="info-page-header">
+      <div class="info-page-title">🗂️ 2024 VAERS CSV — Primary Dataset</div>
+      <div class="info-page-sub">Used by KPI 1 (VSRI) and KPI 2 (VAEI) · Source: US FDA / CDC · File: 2024VAERSDATA.csv</div>
+    </div>
+    <div class="content">
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num">53,760+</div><div class="stat-lbl">Total Records</div></div>
+        <div class="stat-box"><div class="stat-num">43</div><div class="stat-lbl">Raw Columns</div></div>
+        <div class="stat-box"><div class="stat-num">10</div><div class="stat-lbl">Key Columns Used</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--green)">CSV</div><div class="stat-lbl">File Format</div></div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">Key Columns Used in Pipelines</div>
+        <div class="chart-panel">
+          <div class="chart-body">
+            <table class="data-table">
+              <thead><tr><th>Column Name</th><th>Data Type</th><th>Used By</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><code>VAERS_ID</code></td><td>Integer</td><td>All KPIs</td><td>Unique identifier for each adverse event report</td></tr>
+                <tr><td><code>SYMPTOM_TEXT</code></td><td>String (Free Text)</td><td>KPI 2 (VAEI)</td><td>Free-text symptom description — keyword-matched for error classification</td></tr>
+                <tr><td><code>DIED</code></td><td>Flag (Y/N)</td><td>KPI 1, KPI 3</td><td>'Y' if patient died — weight 10 in VSRI formula</td></tr>
+                <tr><td><code>L_THREAT</code></td><td>Flag (Y/N)</td><td>KPI 1, KPI 3</td><td>'Y' if life-threatening event — weight 8 in VSRI formula</td></tr>
+                <tr><td><code>HOSPITAL</code></td><td>Flag (Y/N)</td><td>KPI 1, KPI 3</td><td>'Y' if hospitalised — weight 6 in VSRI formula</td></tr>
+                <tr><td><code>ER_VISIT</code></td><td>Flag (Y/N)</td><td>KPI 1, KPI 3</td><td>'Y' if visited emergency room — weight 4 in VSRI formula</td></tr>
+                <tr><td><code>HOSPDAYS</code></td><td>Integer</td><td>KPI 1, KPI 3</td><td>Hospital days — weight 3 if HOSPDAYS &gt; 7</td></tr>
+                <tr><td><code>AGE_YRS</code></td><td>Decimal</td><td>KPI 2 (VAEI)</td><td>Patient age — used to derive AGE_BAND (PEDIATRIC / ADULT / ELDERLY)</td></tr>
+                <tr><td><code>STATE</code></td><td>String</td><td>Reference</td><td>US state where adverse event was reported</td></tr>
+                <tr><td><code>SEX</code></td><td>String</td><td>Reference</td><td>Biological sex of patient (M / F / U)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">Data Quality Issues Handled</div>
+        <div class="formula-box">
+          <strong>Problem 1 — NULL severity flags:</strong> DIED, HOSPITAL, L_THREAT, ER_VISIT contain NULL when no event occurred.
+          <br>→ <strong>Fix:</strong> <code>EXP_PREPROCESS</code> transformer replaces all NULLs with <code>'N'</code> or <code>0</code><br><br>
+          <strong>Problem 2 — NULL SYMPTOM_TEXT:</strong> Records without symptom text cannot be error-classified.
+          <br>→ <strong>Fix:</strong> <code>FLT_CLEAN_RECORDS</code> filter gates out records where <code>ISNULL(SYMPTOM_TEXT)</code><br><br>
+          <strong>Problem 3 — Unstructured free text:</strong> SYMPTOM_TEXT has no schema — must use keyword matching.
+          <br>→ <strong>Fix:</strong> <code>INSTR()</code> function in <code>EXP_CLASSIFY</code> searches for priority keywords in priority order
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-csv2024 -->
+
+
+  <!-- ══ PAGE: 2023–2025 MULTI ══════════════════ -->
+  <div class="page" id="page-multiyear">
+    <div class="info-page-header">
+      <div class="info-page-title">📅 2023–2025 Multi-Year Dataset</div>
+      <div class="info-page-sub">Used by KPI 3 (Trend Analysis) · 3 years × 2 files per year = 6 source files · Join key: VAERS_ID</div>
+    </div>
+    <div class="content">
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">6</div><div class="stat-lbl">Source Files Total</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--orange)">3</div><div class="stat-lbl">Joiner Transformations</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--green)">VAERS_ID</div><div class="stat-lbl">Join Key</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--purple)">Inner</div><div class="stat-lbl">Join Type</div></div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">Source Files by Year</div>
+        <div class="chart-panel">
+          <div class="chart-body">
+            <table class="data-table">
+              <thead><tr><th>Year</th><th>Event File (VAERSDATA)</th><th>Vaccine File (VAERSVAX)</th><th>Join Key</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><strong>2023</strong></td><td>2023VAERSDATA.csv</td><td>2023VAERSVAX.csv</td><td>VAERS_ID</td><td>Baseline year for trend comparison</td></tr>
+                <tr><td><strong>2024</strong></td><td>2024VAERSDATA.csv</td><td>2024VAERSVAX.csv</td><td>VAERS_ID</td><td>Core year — also used by KPI 1 &amp; 2</td></tr>
+                <tr><td><strong>2025</strong></td><td>2025VAERSDATA.csv</td><td>2025VAERSVAX.csv</td><td>VAERS_ID</td><td>Latest year for current risk snapshot</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">Multi-Year Output Data (MultiYear_Trend_Unpivoted.csv)</div>
+        <div class="chart-panel">
+          <div class="chart-body">
+            <table class="data-table">
+              <thead><tr><th>Vaccine</th><th class="right">2023 %</th><th class="right">2024 %</th><th class="right">2025 %</th><th class="right">Δ (3-yr)</th><th class="center">Trend</th></tr></thead>
+              <tbody>
+                <tr class="row-inc"><td>Vaccine_A</td><td class="right">4.8%</td><td class="right">6.2%</td><td class="right">8.5%</td><td class="right" style="color:var(--red)">+3.7%</td><td class="center"><span class="pill pill-inc">INCREASING</span></td></tr>
+                <tr class="row-dec"><td>Vaccine_B</td><td class="right">7.1%</td><td class="right">5.9%</td><td class="right">4.2%</td><td class="right" style="color:var(--green)">−2.9%</td><td class="center"><span class="pill pill-dec">DECREASING</span></td></tr>
+                <tr><td>Vaccine_C</td><td class="right">3.4%</td><td class="right">5.2%</td><td class="right">4.1%</td><td class="right" style="color:var(--blue)">+0.7%</td><td class="center"><span class="pill pill-flu">FLUCTUATING</span></td></tr>
+                <tr class="row-inc"><td>Vaccine_D</td><td class="right">2.1%</td><td class="right">3.8%</td><td class="right">6.9%</td><td class="right" style="color:var(--red)">+4.8%</td><td class="center"><span class="pill pill-inc">INCREASING</span></td></tr>
+                <tr class="row-dec"><td>Vaccine_E</td><td class="right">8.9%</td><td class="right">6.5%</td><td class="right">3.3%</td><td class="right" style="color:var(--green)">−5.6%</td><td class="center"><span class="pill pill-dec">DECREASING</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-multiyear -->
+
+
+  <!-- ══ PAGE: PIPELINE OUTPUT ══════════════════ -->
+  <div class="page" id="page-pipeline">
+    <div class="info-page-header">
+      <div class="info-page-title">⚙️ Pipeline Output — Informatica IICS Transformer Chains</div>
+      <div class="info-page-sub">Full ETL pipeline documentation for all 3 KPIs · Informatica Intelligent Cloud Services (IICS)</div>
+    </div>
+    <div class="content">
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">5</div><div class="stat-lbl">VSRI Transformers</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--orange)">7</div><div class="stat-lbl">VAEI Transformers</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--purple)">10+</div><div class="stat-lbl">Trend Transformers</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--green)">3</div><div class="stat-lbl">Output CSV Files</div></div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">KPI 1 — VSRI Pipeline (5 Transformers)</div>
+        <div class="pipeline-box">
+          <div class="pipeline-flow">
+            <span class="pf-node">Source<br><small>2024VAERSDATA.csv</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_PREPROCESS<br><small>Null: DIED/HOSPITAL/ER_VISIT/L_THREAT→'N', HOSPDAYS→0</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">Expression<br><small>VSRI=(D×10)+(L×8)+(H×6)+(E×4)+(HOSPDAYS>7×3)</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">AGG_VSRI<br><small>Group by VAX_NAME → COUNT, SUM, AVG</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_FINAL_OUTPUT<br><small>Select 4 output columns only</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">Sorter<br><small>AVG_VSRI_SCORE DESC</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">Target<br><small>VSRI_OUTPUT.csv</small></span>
+          </div>
+          <div class="pipeline-note">Output: VAX_NAME | TOTAL_CASES | TOTAL_VSRI_SCORE | AVG_VSRI_SCORE</div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">KPI 2 — VAEI Pipeline (7 Transformers)</div>
+        <div class="pipeline-box">
+          <div class="pipeline-flow">
+            <span class="pf-node">Source<br><small>2024VAERSDATA.csv</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">FLT_CLEAN_RECORDS<br><small>NOT ISNULL(SYMPTOM_TEXT) AND NOT ISNULL(VAERS_ID)</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_CLASSIFY<br><small>INSTR keyword match → ERROR_TYPE + ERROR_SCORE + AGE_BAND</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">AGG_VAEI<br><small>Group by ERROR_TYPE → COUNT, SUM, AVG</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">RNK_ERROR<br><small>Rank by TOTAL_ERROR_SCORE DESC (Top 10)</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">SRT_FINAL<br><small>Order by RANKINDEX ASC</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_FINAL<br><small>Select 5 output columns only</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">Target<br><small>VAEI_OUTPUT.csv</small></span>
+          </div>
+          <div class="pipeline-note">Output: RANKINDEX | ERROR_TYPE | TOTAL_ERROR_COUNT | TOTAL_ERROR_SCORE | AVG_ERROR_SCORE</div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-section-title">KPI 3 — Multi-Year Trend Pipeline (10+ Transformers)</div>
+        <div class="pipeline-box">
+          <div class="pipeline-title">Per-Year Processing (×3 for 2023, 2024, 2025):</div>
+          <div class="pipeline-flow">
+            <span class="pf-node">VAERSDATA.csv<br><small>(detail)</small></span>
+            <span class="pf-arrow">⎤</span>
+            <span class="pf-node">Joiner<br><small>Inner Join on VAERS_ID</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_PREPROCESS<br><small>Null handling</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_SCORE<br><small>VSRI formula + HIGH_RISK flag (≥10)</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">AGG_YEAR<br><small>By VAX_NAME → High_Risk_Pct</small></span>
+          </div>
+          <div class="pipeline-flow" style="margin-top:8px">
+            <span class="pf-node">VAERSVAX.csv<br><small>(master)</small></span>
+            <span class="pf-arrow">⎦</span>
+          </div>
+          <br>
+          <div class="pipeline-title">Multi-Year Merge:</div>
+          <div class="pipeline-flow">
+            <span class="pf-node">2023 Agg</span><span class="pf-arrow">⎤</span>
+            <span class="pf-node">Joiner 1<br><small>On VAX_NAME</small></span>
+            <span class="pf-arrow">⎤</span>
+            <span class="pf-node">Joiner 2<br><small>On VAX_NAME</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">EXP_TREND_CLASSIFY<br><small>INCREASING / DECREASING / FLUCTUATING</small></span>
+            <span class="pf-arrow">→</span>
+            <span class="pf-node">Target<br><small>VSRI_OUTPUT_MultiYear.csv</small></span>
+          </div>
+          <div class="pipeline-flow" style="margin-top:4px">
+            <span class="pf-node">2024 Agg</span><span class="pf-arrow">⎦</span>
+            <span style="width:60px"></span>
+            <span class="pf-node">2025 Agg</span><span class="pf-arrow">⎦</span>
+          </div>
+          <div class="pipeline-note">Output: VAX_NAME | Risk_2023 | Risk_2024 | Risk_2025 | Trend | Delta_2023_to_2025</div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-pipeline -->
+
+</div><!-- /main -->
+
+<script>
+// ═════════════════════════════════════════════════
+// DATA
+// ═════════════════════════════════════════════════
+const ALL_ERRORS = [
+  { type:"OTHER ERROR",     count:47849, total:47849, avg:1.0 },
+  { type:"EXPIRED VACCINE", count:2014,  total:6042,  avg:3.0 },
+  { type:"WRONG VACCINE",   count:707,   total:3535,  avg:5.0 },
+  { type:"WRONG STORAGE",   count:1064,  total:3192,  avg:3.0 },
+  { type:"WRONG AGE GROUP", count:751,   total:3004,  avg:4.0 },
+  { type:"WRONG DOSE",      count:375,   total:1875,  avg:5.0 },
+];
+const SPECIFIC = ALL_ERRORS.filter(d => d.type !== "OTHER ERROR");
+
+const TREND_ALL = [
+  { v:"Vaccine A", r:[4.8,6.2,8.5], trend:"INCREASING",  delta:"+3.7" },
+  { v:"Vaccine B", r:[7.1,5.9,4.2], trend:"DECREASING",  delta:"-2.9" },
+  { v:"Vaccine C", r:[3.4,5.2,4.1], trend:"FLUCTUATING", delta:"+0.7" },
+  { v:"Vaccine D", r:[2.1,3.8,6.9], trend:"INCREASING",  delta:"+4.8" },
+  { v:"Vaccine E", r:[8.9,6.5,3.3], trend:"DECREASING",  delta:"-5.6" },
+];
+
+const PALETTE = ["#0078d4","#e67e22","#c0392b","#27ae60","#8e44ad","#16a085"];
+
+// ═════════════════════════════════════════════════
+// STATE
+// ═════════════════════════════════════════════════
+let currentFilter    = "all";
+let currentTrend     = "all";
+let currentChartView = "count";
+let currentTrendPage = "all";
+let currentPage      = "overview";
+let chartsInitialised = {};
+
+// ═════════════════════════════════════════════════
+// NAVIGATION
+// ═════════════════════════════════════════════════
+const PAGE_TITLES = {
+  overview:  "Pharmacovigilance Intelligence Platform — Overview",
+  vaei:      "VAEI Analysis — Vaccine Administration Error Index",
+  vsri:      "VSRI Scores — Vaccine Safety Risk Index",
+  trend:     "Trend Analysis — Multi-Year Risk (2023–2025)",
+  csv2024:   "Data · 2024 VAERS CSV",
+  multiyear: "Data · 2023–2025 Multi-Year Dataset",
+  pipeline:  "Data · Pipeline Output",
+};
+
+function navTo(page) {
+  // hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // remove active from all nav items
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  // show target page
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+
+  // update topbar title
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
+
+  // show/hide filterbar (only on overview)
+  document.getElementById('filterbar').style.display = (page === 'overview') ? 'flex' : 'none';
+
+  currentPage = page;
+
+  // lazy-init charts for the new page
+  if (!chartsInitialised[page]) {
+    chartsInitialised[page] = true;
+    initPageCharts(page);
+  }
+}
+
+// ═════════════════════════════════════════════════
+// CHART HELPERS
+// ═════════════════════════════════════════════════
+Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = "#6b7280";
+Chart.defaults.plugins.legend.display = false;
+
+function makeBar(id, labels, data, colors, horizontal) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  return new Chart(ctx, {
+    type: "bar",
+    data: { labels, datasets:[{ data, backgroundColor:colors, borderRadius:4, borderSkipped:false }] },
+    options: {
+      indexAxis: horizontal ? "y" : "x",
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => " " + c.parsed[horizontal?"x":"y"].toLocaleString() } } },
+      scales:{ x:{ grid:{color:"#f0f0f0"}, ticks:{maxRotation:horizontal?0:35} }, y:{ grid:{color:"#f0f0f0"} } }
+    }
+  });
+}
+
+// ═════════════════════════════════════════════════
+// OVERVIEW PAGE CHARTS
+// ═════════════════════════════════════════════════
+let barCountChart, donutChart, avgChart, vsriChart, dualChart, trendChart;
+
+function initOverviewCharts() {
+  const d = getFilteredData();
+  barCountChart = makeBar("barCount", d.map(x=>x.type), d.map(x=>x.count), d.map((_,i)=>PALETTE[i%PALETTE.length]), true);
+
+  donutChart = new Chart(document.getElementById("donutScore"), {
+    type:"doughnut",
+    data:{ labels:d.map(x=>x.type), datasets:[{ data:d.map(x=>x.total), backgroundColor:PALETTE, borderWidth:2, borderColor:"#fff", hoverOffset:8 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:"58%",
+      plugins:{ legend:{ display:true, position:"right", labels:{boxWidth:12,font:{size:10}} },
+        tooltip:{ callbacks:{ label: c => " "+c.label+": "+c.parsed.toLocaleString()+" pts ("+((c.parsed/65497)*100).toFixed(1)+"%)" } } } }
+  });
+
+  avgChart = makeBar("avgScore", d.map(x=>x.type), d.map(x=>x.avg),
+    d.map(x=> x.avg===5?"#c0392b":x.avg===4?"#e67e22":x.avg===3?"#f1c40f":"#6b7280"), false);
+
+  vsriChart = new Chart(document.getElementById("vsriWeights"), {
+    type:"bar",
+    data:{ labels:["Death","Life-Threatening","Hospitalisation","ER Visit","Hosp >7 days"],
+      datasets:[{ data:[10,8,6,4,3], backgroundColor:["#c0392b","#e74c3c","#e67e22","#f39c12","#f1c40f"], borderRadius:4 }] },
+    options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>" Weight: "+c.parsed.x+" pts" } } },
+      scales:{ x:{ grid:{color:"#f0f0f0"}, max:12, ticks:{ callback:v=>v+" pts" } }, y:{grid:{display:false}} } }
+  });
+
+  dualChart = new Chart(document.getElementById("dualBar"), {
+    type:"bar",
+    data:{ labels:SPECIFIC.map(d=>d.type),
+      datasets:[
+        { label:"Report Count", data:SPECIFIC.map(d=>d.count), backgroundColor:"#0078d4", borderRadius:3 },
+        { label:"Total Score",  data:SPECIFIC.map(d=>d.total), backgroundColor:"#e67e22", borderRadius:3 },
+      ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, position:"top", labels:{boxWidth:12} },
+        tooltip:{ callbacks:{ label: c=>" "+c.dataset.label+": "+c.parsed.y.toLocaleString() } } },
+      scales:{ x:{grid:{color:"#f0f0f0"}}, y:{grid:{color:"#f0f0f0"}, ticks:{callback:v=>v.toLocaleString()}} } }
+  });
+
+  initTrendChart();
+  buildTrendTable("trend-tbody", currentTrend);
+}
+
+function initTrendChart() {
+  const filtered = getTrendFiltered(currentTrend);
+  const datasets = filtered.map((d,i)=>({
+    label:d.v, data:d.r,
+    borderColor:PALETTE[i%PALETTE.length],
+    backgroundColor:PALETTE[i%PALETTE.length]+"22",
+    fill:true, tension:0.35, pointRadius:5, pointHoverRadius:7, borderWidth:2.5
+  }));
+  document.getElementById("trend-badge").textContent = filtered.length+" vaccines tracked";
+  if (trendChart) {
+    // Update in-place — avoids stale canvas reference after destroy()
+    trendChart.data.datasets = datasets;
+    trendChart.update();
+  } else {
+    trendChart = new Chart(document.getElementById("trendLine"), {
+      type:"line",
+      data:{ labels:["2023","2024","2025"], datasets },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:true, position:"top", labels:{boxWidth:12} },
+          tooltip:{ callbacks:{ label: c=>" "+c.dataset.label+": "+c.parsed.y.toFixed(1)+"%" } } },
+        scales:{ x:{grid:{color:"#f0f0f0"}}, y:{ grid:{color:"#f0f0f0"}, ticks:{callback:v=>v+"%"}, min:0, max:12 } } }
+    });
+  }
+}
+
+function buildTrendTable(tbodyId, filter) {
+  const filtered = getTrendFiltered(filter);
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = filtered.map(d => {
+    const delta = (d.r[2]-d.r[0]).toFixed(1);
+    const dStr  = (Number(delta)>0?"+":"")+delta+"%";
+    const pillCls = d.trend==="INCREASING"?"pill-inc":d.trend==="DECREASING"?"pill-dec":"pill-flu";
+    const rowCls  = d.trend==="INCREASING"?"row-inc":d.trend==="DECREASING"?"row-dec":"";
+    return `<tr class="${rowCls}"><td>${d.v}</td><td class="right">${d.r[0]}%</td><td class="right">${d.r[1]}%</td><td class="right">${d.r[2]}%</td><td class="right">${dStr}</td><td class="center"><span class="pill ${pillCls}">${d.trend}</span></td></tr>`;
+  }).join("");
+}
+
+// ═════════════════════════════════════════════════
+// VAEI PAGE CHARTS
+// ═════════════════════════════════════════════════
+function initVaeiCharts() {
+  makeBar("vaeiBarAll",      ALL_ERRORS.map(x=>x.type), ALL_ERRORS.map(x=>x.count), ALL_ERRORS.map((_,i)=>PALETTE[i%PALETTE.length]), true);
+  makeBar("vaeiBarSpecific", SPECIFIC.map(x=>x.type),   SPECIFIC.map(x=>x.count),   SPECIFIC.map((_,i)=>PALETTE[(i+1)%PALETTE.length]), true);
+  makeBar("vaeiAvg",   ALL_ERRORS.map(x=>x.type), ALL_ERRORS.map(x=>x.avg),
+    ALL_ERRORS.map(x=>x.avg===5?"#c0392b":x.avg===4?"#e67e22":x.avg===3?"#f1c40f":"#6b7280"), false);
+  makeBar("vaeiTotal", ALL_ERRORS.map(x=>x.type), ALL_ERRORS.map(x=>x.total), ALL_ERRORS.map((_,i)=>PALETTE[i%PALETTE.length]), false);
+}
+
+// ═════════════════════════════════════════════════
+// VSRI PAGE CHARTS
+// ═════════════════════════════════════════════════
+function initVsriCharts() {
+  const ctx1 = document.getElementById("vsriWeightsPage");
+  if (ctx1) new Chart(ctx1, {
+    type:"bar",
+    data:{ labels:["Death","Life-Threatening","Hospitalisation","ER Visit","Hosp >7 days"],
+      datasets:[{ data:[10,8,6,4,3], backgroundColor:["#c0392b","#e74c3c","#e67e22","#f39c12","#f1c40f"], borderRadius:4 }] },
+    options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>" Weight: "+c.parsed.x+" pts" } } },
+      scales:{ x:{grid:{color:"#f0f0f0"}, max:12, ticks:{callback:v=>v+" pts"}}, y:{grid:{display:false}} } }
+  });
+
+  const ctx2 = document.getElementById("vsriDonut");
+  if (ctx2) new Chart(ctx2, {
+    type:"doughnut",
+    data:{ labels:["Death (10)","Life-Threatening (8)","Hospitalisation (6)","ER Visit (4)","Hosp>7d (3)"],
+      datasets:[{ data:[10,8,6,4,3], backgroundColor:["#c0392b","#e74c3c","#e67e22","#f39c12","#f1c40f"], borderWidth:2, borderColor:"#fff", hoverOffset:8 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:"52%",
+      plugins:{ legend:{ display:true, position:"right", labels:{boxWidth:12,font:{size:10}} },
+        tooltip:{ callbacks:{ label:c=>" "+c.label+": "+((c.parsed/31)*100).toFixed(0)+"% of max score" } } } }
+  });
+}
+
+// ═════════════════════════════════════════════════
+// TREND PAGE CHARTS
+// ═════════════════════════════════════════════════
+let trendPageChart, trendDeltaChart, trendDonutChart;
+
+function initTrendPageCharts() {
+  buildTrendPageLine("all");
+  buildTrendPageTable("all");
+
+  // Delta chart
+  const ctx2 = document.getElementById("trendDelta");
+  if (ctx2) {
+    const deltas = TREND_ALL.map(d => parseFloat(d.delta));
+    trendDeltaChart = new Chart(ctx2, {
+      type:"bar",
+      data:{ labels:TREND_ALL.map(d=>d.v),
+        datasets:[{ data:deltas, backgroundColor:deltas.map(v=>v>0?"#c0392b":"#27ae60"), borderRadius:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>" Δ: "+(c.parsed.y>0?"+":"")+c.parsed.y+"%" } } },
+        scales:{ x:{grid:{color:"#f0f0f0"}}, y:{ grid:{color:"#f0f0f0"}, ticks:{callback:v=>(v>0?"+":"")+v+"%"} } } }
+    });
+  }
+
+  // Trend donut
+  const ctx3 = document.getElementById("trendDonut");
+  if (ctx3) new Chart(ctx3, {
+    type:"doughnut",
+    data:{ labels:["Increasing","Decreasing","Fluctuating"],
+      datasets:[{ data:[2,2,1], backgroundColor:["#c0392b","#27ae60","#2980b9"], borderWidth:2, borderColor:"#fff", hoverOffset:8 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:"52%",
+      plugins:{ legend:{ display:true, position:"right", labels:{boxWidth:12} },
+        tooltip:{ callbacks:{ label:c=>" "+c.label+": "+c.parsed+" vaccines" } } } }
+  });
+}
+
+function buildTrendPageLine(filter) {
+  const filtered = getTrendFiltered(filter);
+  const datasets = filtered.map((d,i)=>({
+    label:d.v, data:d.r,
+    borderColor:PALETTE[i%PALETTE.length],
+    backgroundColor:PALETTE[i%PALETTE.length]+"22",
+    fill:true, tension:0.35, pointRadius:6, pointHoverRadius:8, borderWidth:2.5
+  }));
+  const el = document.getElementById("trendPageLine");
+  if (!el) return;
+  if (trendPageChart) trendPageChart.destroy();
+  trendPageChart = new Chart(el, {
+    type:"line",
+    data:{ labels:["2023","2024","2025"], datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, position:"top", labels:{boxWidth:12} },
+        tooltip:{ callbacks:{ label:c=>" "+c.dataset.label+": "+c.parsed.y.toFixed(1)+"%" } } },
+      scales:{ x:{grid:{color:"#f0f0f0"}}, y:{ grid:{color:"#f0f0f0"}, ticks:{callback:v=>v+"%"}, min:0, max:12 } } }
+  });
+  const badge = document.getElementById("trend-page-badge");
+  if (badge) badge.textContent = filtered.length+" vaccines tracked";
+}
+
+function buildTrendPageTable(filter) {
+  const filtered = getTrendFiltered(filter);
+  const tbody = document.getElementById("trend-page-tbody");
+  if (!tbody) return;
+  tbody.innerHTML = filtered.map(d => {
+    const delta = d.delta;
+    const pillCls = d.trend==="INCREASING"?"pill-inc":d.trend==="DECREASING"?"pill-dec":"pill-flu";
+    const rowCls  = d.trend==="INCREASING"?"row-inc":d.trend==="DECREASING"?"row-dec":"";
+    const action  = d.trend==="INCREASING"
+      ? '<span class="pill pill-critical">Expedited Review</span>'
+      : d.trend==="DECREASING"
+        ? '<span class="pill pill-dec">Monitor</span>'
+        : '<span class="pill pill-flu">Investigate</span>';
+    return `<tr class="${rowCls}"><td>${d.v}</td><td class="right">${d.r[0]}%</td><td class="right">${d.r[1]}%</td><td class="right">${d.r[2]}%</td><td class="right">${delta}%</td><td class="center"><span class="pill ${pillCls}">${d.trend}</span></td><td class="center">${action}</td></tr>`;
+  }).join("");
+}
+
+// ═════════════════════════════════════════════════
+// PAGE CHART DISPATCHER
+// ═════════════════════════════════════════════════
+function initPageCharts(page) {
+  if (page === 'overview')  { initOverviewCharts(); }
+  if (page === 'vaei')      { initVaeiCharts(); }
+  if (page === 'vsri')      { initVsriCharts(); }
+  if (page === 'trend')     { initTrendPageCharts(); }
+}
+
+// ═════════════════════════════════════════════════
+// FILTER HELPERS
+// ═════════════════════════════════════════════════
+function getFilteredData() { return currentFilter === "all" ? ALL_ERRORS : SPECIFIC; }
+function getTrendFiltered(f) {
+  if (f === "inc") return TREND_ALL.filter(d=>d.trend==="INCREASING");
+  if (f === "dec") return TREND_ALL.filter(d=>d.trend==="DECREASING");
+  if (f === "flu") return TREND_ALL.filter(d=>d.trend==="FLUCTUATING");
+  return TREND_ALL;
+}
+
+// ═════════════════════════════════════════════════
+// FILTER HANDLERS — OVERVIEW
+// ═════════════════════════════════════════════════
+function setFilter(f) {
+  currentFilter = f;
+  // Update button states
+  document.getElementById('ef-all').classList.toggle('active',      f === 'all');
+  document.getElementById('ef-specific').classList.toggle('active', f === 'specific');
+
+  const d = getFilteredData();
+  // Update bar chart
+  barCountChart.data.labels = d.map(x=>x.type);
+  barCountChart.data.datasets[0].data = currentChartView === "count" ? d.map(x=>x.count) : d.map(x=>x.total);
+  barCountChart.data.datasets[0].backgroundColor = d.map((_,i)=>PALETTE[i%PALETTE.length]);
+  document.getElementById("count-badge").textContent = d.length+" error types";
+  barCountChart.update();
+  // Update donut
+  donutChart.data.labels = d.map(x=>x.type);
+  donutChart.data.datasets[0].data = d.map(x=>x.total);
+  donutChart.update();
+  // Update avg
+  avgChart.data.labels = d.map(x=>x.type);
+  avgChart.data.datasets[0].data = d.map(x=>x.avg);
+  avgChart.data.datasets[0].backgroundColor = d.map(x=>x.avg===5?"#c0392b":x.avg===4?"#e67e22":x.avg===3?"#f1c40f":"#6b7280");
+  avgChart.update();
+}
+
+function setTrend(t) {
+  currentTrend = t;
+  // Update button active states
+  ['tf-all','tf-inc','tf-dec'].forEach(id => document.getElementById(id).classList.remove('active'));
+  const map = { all:'tf-all', inc:'tf-inc', dec:'tf-dec' };
+  if (map[t]) document.getElementById(map[t]).classList.add('active');
+  // Update chart datasets in-place (no destroy — avoids canvas lock)
+  initTrendChart();
+  buildTrendTable("trend-tbody", t);
+}
+
+function setChartView(v) {
+  currentChartView = v;
+  document.getElementById('cv-count').classList.toggle('active', v === 'count');
+  document.getElementById('cv-score').classList.toggle('active', v === 'score');
+  const d = getFilteredData();
+  barCountChart.data.datasets[0].data = v === "count" ? d.map(x=>x.count) : d.map(x=>x.total);
+  barCountChart.update();
+}
+
+// ═════════════════════════════════════════════════
+// FILTER HANDLERS — TREND PAGE
+// ═════════════════════════════════════════════════
+function setTrendPage(f) {
+  currentTrendPage = f;
+  document.getElementById('tp-all').classList.toggle('active', f === 'all');
+  document.getElementById('tp-inc').classList.toggle('active', f === 'inc');
+  document.getElementById('tp-dec').classList.toggle('active', f === 'dec');
+  document.getElementById('tp-flu').classList.toggle('active', f === 'flu');
+  buildTrendPageLine(f);
+  buildTrendPageTable(f);
+}
+
+// ═════════════════════════════════════════════════
+// BOOT
+// ═════════════════════════════════════════════════
+window.onload = () => {
+  // overview is default active page — init its charts
+  chartsInitialised['overview'] = true;
+  initOverviewCharts();
+};
+</script>
+</body>
+</html>

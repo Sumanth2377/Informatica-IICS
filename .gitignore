@@ -1,0 +1,9 @@
+powerbi-modeling-mcp/
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+.DS_Store
+Thumbs.db

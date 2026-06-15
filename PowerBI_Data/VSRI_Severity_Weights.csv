@@ -1,0 +1,6 @@
+Outcome,Weight,Category
+Death,10,Fatal
+Life_Threatening,8,Critical
+Hospitalisation,6,Serious
+ER_Visit,4,Moderate
+Hosp_More_Than_7_Days,3,Moderate

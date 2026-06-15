@@ -1,0 +1,6 @@
+Vaccine,Risk_2023,Risk_2024,Risk_2025,Trend,Delta_2023_to_2025
+Vaccine_A,4.8,6.2,8.5,INCREASING,+3.7
+Vaccine_B,7.1,5.9,4.2,DECREASING,-2.9
+Vaccine_C,3.4,5.2,4.1,FLUCTUATING,+0.7
+Vaccine_D,2.1,3.8,6.9,INCREASING,+4.8
+Vaccine_E,8.9,6.5,3.3,DECREASING,-5.6

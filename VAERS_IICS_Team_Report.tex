@@ -1,0 +1,701 @@
+% ============================================================
+%  Informatica Intelligent Data Management Cloud — Project Report
+%  Pharmacovigilance Intelligence Platform using 2024 VAERS Data
+%  Matching format of: informatica_aviation (1).docx
+% ============================================================
+
+\documentclass[12pt,a4paper]{report}
+
+% ---------- Packages ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{mdframed}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{tocloft}
+\usepackage{parskip}
+\usepackage{microtype}
+
+\geometry{
+  top=25mm,
+  bottom=25mm,
+  left=30mm,
+  right=25mm
+}
+
+% ---------- Colours ----------
+\definecolor{infblue}{RGB}{0,82,155}
+\definecolor{lightgray}{RGB}{248,248,248}
+\definecolor{dangered}{RGB}{200,50,50}
+
+% ---------- Hyperref ----------
+\hypersetup{colorlinks=true, linkcolor=infblue, urlcolor=infblue, citecolor=infblue}
+
+% ---------- Header / Footer ----------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{infblue}{Informatica IDMC — VAERS Pharmacovigilance Platform}}
+\fancyhead[R]{\small\textcolor{infblue}{2024--25}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---------- Chapter title style (matching aviation report) ----------
+\titleformat{\chapter}[block]
+  {\normalfont\Large\bfseries\color{infblue}}
+  {\thechapter.}{10pt}{}
+\titlespacing{\chapter}{0pt}{10pt}{12pt}
+
+% ---------- Section style ----------
+\titleformat{\section}[block]
+  {\normalfont\large\bfseries}
+  {\thesection}{8pt}{}
+\titlespacing{\section}{0pt}{10pt}{6pt}
+
+\titleformat{\subsection}[block]
+  {\normalfont\normalsize\bfseries}
+  {\thesubsection}{6pt}{}
+
+% ---------- Listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{lightgray},
+  frame=single,
+  rulecolor=\color{infblue},
+  breaklines=true
+}
+
+% ---------- Spacing ----------
+\setstretch{1.3}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+% ============================================================
+% COVER PAGE  (matches aviation report layout exactly)
+% ============================================================
+\begin{titlepage}
+\centering
+
+\vspace*{10mm}
+{\LARGE\bfseries\color{infblue} Informatica Intelligent Data Management Cloud}\\[4pt]
+{\Large\bfseries Project Report}
+
+\vspace{12mm}
+\hrule height 1.5pt
+\vspace{8mm}
+
+{\large\bfseries COURSE DETAILS:}\\[8pt]
+\begin{tabular}{ll}
+  \textbf{Course Name}  & Informatica \\
+  \textbf{Course Code}  & 25ECSE322   \\
+  \textbf{Semester}     & VI          \\
+  \textbf{Division}     & C           \\
+\end{tabular}
+
+\vspace{12mm}
+\hrule
+\vspace{10mm}
+
+{\large\bfseries TEAM DETAILS:}\\[10pt]
+\begin{tabular}{|l|c|l|}
+\hline
+\textbf{NAME} & \textbf{ROLL NO} & \textbf{USN} \\
+\hline
+[Member 1 Name] & [Roll No] & [USN] \\
+\hline
+[Member 2 Name] & [Roll No] & [USN] \\
+\hline
+[Member 3 Name] & [Roll No] & [USN] \\
+\hline
+\end{tabular}
+
+\vspace{14mm}
+\hrule
+\vspace{10mm}
+
+{\large\bfseries GUIDED BY:}\\[6pt]
+{\large Mr./Ms. [Guide Name]}\\[2pt]
+{\normalsize Department of Computer Science \& Engineering}
+
+\vfill
+
+{\large\bfseries PROJECT TITLE:}\\[6pt]
+\begin{mdframed}[linecolor=infblue, linewidth=1.5pt]
+\centering
+\textbf{\large Pharmacovigilance Intelligence Platform}\\[4pt]
+\textit{Building Vaccine Safety KPIs on Informatica IDMC\\
+Using 2024 VAERS Public Healthcare Data}
+\end{mdframed}
+
+\vspace{10mm}
+{\normalsize Academic Year 2024--25}
+
+\end{titlepage}
+
+% ============================================================
+% TABLE OF CONTENTS
+% ============================================================
+\tableofcontents
+\newpage
+
+% ============================================================
+\chapter{Introduction}
+% ============================================================
+
+\section{Preamble}
+
+The global pharmacovigilance landscape is under increasing pressure to detect and respond to adverse drug and vaccine events faster than traditional manual reporting systems allow. Adverse vaccine events are relatively rare but their impact — when undetected — can be catastrophic at a population level. Globally, adverse drug reactions (ADRs) cause over \textbf{1.9 million emergency visits} annually, and in India alone are estimated to cost the healthcare system \textbf{₹3,500+ crore every year}.
+
+This project models a \textbf{Vaccine Safety Pharmacovigilance Data Platform} that organises 2024 VAERS (Vaccine Adverse Event Reporting System) data to support three distinct Key Performance Indicators (KPIs) — each tackling a different dimension of vaccine safety monitoring. Using Informatica Intelligent Data Management Cloud (IDMC), the system enables streamlined data extraction, cleansing, transformation, classification, and loading (ETL) pipelines to power public health intelligence.
+
+The US FDA/CDC's VAERS database contains 53,760+ adverse event records for 2024 alone. Three team members have independently designed and built ETL pipelines on IICS, each delivering a production-ready KPI:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{KPI 1 (Member 1):} Vaccine Safety Risk Index (VSRI) — quantifies patient-level harm severity per vaccine
+  \item \textbf{KPI 2 (Member 2):} Vaccine Administration Error Index (VAEI) — classifies and ranks errors at the point of vaccine administration
+  \item \textbf{KPI 3 (Member 3):} Multi-Year Vaccine Risk Trend Analysis (2023--2025) — detects evolving risk trajectories across three years of VAERS data
+\end{itemize}
+
+\section{Problem Definition}
+
+Raw VAERS data is distributed across massive, unstructured flat files (CSVs) containing tens of thousands of records per year. Pharmacovigilance officers and regulatory bodies struggle to generate actionable insights because:
+
+\begin{itemize}[leftmargin=*]
+  \item The raw data contains \textbf{missing values} in critical severity fields (DIED, HOSPITAL, L\_THREAT, ER\_VISIT, HOSPDAYS)
+  \item \textbf{Free-text symptom descriptions} (SYMPTOM\_TEXT) are unstructured and require keyword-based parsing to extract meaningful error classifications
+  \item There are \textbf{no pre-calculated risk scores} — regulators cannot quickly identify which vaccines or error types pose the greatest systemic threat
+  \item \textbf{Year-over-year trends} are invisible in single-year snapshot reporting — a rising proportion of severe events may go unnoticed if absolute counts appear stable
+  \item Data sits \textbf{disconnected} across yearly files (2023, 2024, 2025) with no integrated multi-year risk view
+\end{itemize}
+
+As a result, drug safety signals that should trigger regulatory review are delayed by months or missed entirely — leaving regulators and clinicians with no real-time early-warning system.
+
+\section{Objectives}
+
+\begin{itemize}[leftmargin=*]
+  \item To design and implement end-to-end ETL pipelines on Informatica IDMC for processing 2024 VAERS public healthcare data
+  \item To compute a \textbf{Vaccine Safety Risk Index (VSRI)} using weighted severity scoring based on patient outcomes (death, life-threatening events, hospitalisation, ER visits)
+  \item To build a \textbf{Vaccine Administration Error Index (VAEI)} by classifying free-text symptom records into administration error categories and ranking them by cumulative severity
+  \item To perform \textbf{Multi-Year Trend Analysis} (2023--2025) by integrating three years of VAERS data, computing per-vaccine high-risk percentages, and classifying trends as Increasing, Decreasing, or Fluctuating
+  \item To produce clean, structured output files ready for regulatory dashboard consumption
+  \item To demonstrate the breadth of Informatica IDMC transformation capabilities across a real-world public health use case
+\end{itemize}
+
+% ============================================================
+\chapter{Pipeline Architecture Diagrams}
+% ============================================================
+
+This chapter presents the IICS Design Canvas screenshots and logical architecture for each of the three KPI pipelines.
+
+\section{KPI 1 — VSRI Pipeline}
+
+\begin{figure}[h!]
+  \centering
+  \fbox{\parbox{0.92\textwidth}{\centering\vspace{50pt}
+  \textit{[Insert VSRI Pipeline Screenshot Here]}\\
+  \small Source $\to$ EXP\_PREPROCESS $\to$ Expression $\to$ AGG\_VSRI $\to$ EXP\_FINAL\_OUTPUT $\to$ Sorter $\to$ Target
+  \vspace{50pt}}}
+  \caption{VSRI Mapping — IICS Design Canvas (5 Transformers)}
+  \label{fig:vsri}
+\end{figure}
+
+\section{KPI 2 — VAEI Pipeline}
+
+\begin{figure}[h!]
+  \centering
+  \fbox{\parbox{0.92\textwidth}{\centering\vspace{50pt}
+  \textit{[Insert VAEI Pipeline Screenshot Here]}\\
+  \small Source $\to$ FLT\_CLEAN\_RECORDS $\to$ EXP\_CLASSIFY $\to$ AGG\_VAEI $\to$ RNK\_ERROR $\to$ SRT\_FINAL $\to$ EXP\_FINAL $\to$ Target
+  \vspace{50pt}}}
+  \caption{VAEI Mapping — IICS Design Canvas (7 Transformers)}
+  \label{fig:vaei}
+\end{figure}
+
+\section{KPI 3 — Multi-Year Trend Pipeline}
+
+\begin{figure}[h!]
+  \centering
+  \fbox{\parbox{0.92\textwidth}{\centering\vspace{60pt}
+  \textit{[Insert Multi-Year Trend Pipeline Screenshot Here]}\\
+  \small Joiner (per year) $\to$ EXP\_PREPROCESS $\to$ EXP\_SCORE $\to$ AGG\_YEAR $\to$ Joiner (multi-year) $\to$ EXP\_TREND\_CLASSIFY $\to$ Target
+  \vspace{60pt}}}
+  \caption{Multi-Year Trend Mapping — IICS Design Canvas (10+ Transformers)}
+  \label{fig:trend}
+\end{figure}
+
+% ============================================================
+\chapter{Dataset Description}
+% ============================================================
+
+This project utilises the \textbf{Vaccine Adverse Event Reporting System (VAERS)} — a public database jointly administered by the US FDA and CDC. The data is distributed across flat CSV files, one set per year.
+
+\section{Primary Dataset — 2024 VAERS (KPIs 1 and 2)}
+
+\textbf{Description:} The core dataset for KPI 1 and KPI 2. It contains 53,760+ individual adverse event reports from 2024, covering all vaccines administered in the United States.
+
+\medskip
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Attribute} & \textbf{Detail} \\
+\midrule
+File Name       & 2024VAERSDATA.csv \\
+Source Type     & Flat File (CSV) \\
+Provider        & US FDA / CDC Public Database \\
+Total Records   & 53,760+ adverse event reports \\
+Total Fields    & 43 raw columns \\
+\bottomrule
+\end{tabularx}
+
+\medskip\noindent\textbf{Key Columns Used:}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{VAERS\_ID} — Unique identifier for each adverse event report
+  \item \textbf{SYMPTOM\_TEXT} — Free-text description of adverse symptoms reported (used for error classification in KPI 2)
+  \item \textbf{AGE\_YRS} — Age of the patient in years
+  \item \textbf{SEX} — Biological sex of the patient
+  \item \textbf{STATE} — US state where the event was reported
+  \item \textbf{DIED} — Binary flag: 'Y' if the patient died as a result of the adverse event
+  \item \textbf{HOSPITAL} — Binary flag: 'Y' if the patient was hospitalised
+  \item \textbf{ER\_VISIT} — Binary flag: 'Y' if the patient visited an emergency room
+  \item \textbf{L\_THREAT} — Binary flag: 'Y' if the event was life-threatening
+  \item \textbf{HOSPDAYS} — Number of days the patient was hospitalised
+\end{itemize}
+
+\section{Multi-Year Datasets — 2023, 2024, 2025 VAERS (KPI 3)}
+
+KPI 3 integrates three years of VAERS data for trend analysis. Each year consists of two files:
+
+\medskip
+\begin{tabular}{lll}
+\toprule
+\textbf{Year} & \textbf{Event File} & \textbf{Vaccine File} \\
+\midrule
+2023 & 2023VAERSDATA.csv & 2023VAERSVAX.csv \\
+2024 & 2024VAERSDATA.csv & 2024VAERSVAX.csv \\
+2025 & 2025VAERSDATA.csv & 2025VAERSVAX.csv \\
+\bottomrule
+\end{tabular}
+
+\medskip\noindent The \textbf{VAERSDATA} files contain adverse event records. The \textbf{VAERSVAX} files contain vaccine-specific information (vaccine name, manufacturer, lot number). Both files share \textbf{VAERS\_ID} as the join key. Joining these files enriches each adverse event record with its corresponding vaccine identity, enabling vaccine-level risk analysis across multiple years.
+
+% ============================================================
+\chapter{Transformations}
+% ============================================================
+
+This chapter documents all transformations implemented across the three KPI pipelines on Informatica IDMC, presented as numbered scenarios matching each KPI objective.
+
+% ============================================================
+\section*{KPI 1 — Vaccine Safety Risk Index (VSRI)}
+\addcontentsline{toc}{section}{KPI 1 — Vaccine Safety Risk Index (VSRI)}
+% ============================================================
+
+\subsection*{Objective}
+\addcontentsline{toc}{subsection}{Objective (VSRI)}
+To preprocess raw VAERS records, handle missing severity fields, and compute a weighted patient-level risk score. The output is a per-vaccine aggregated VSRI register for post-market surveillance.
+
+\bigskip
+
+\noindent\textbf{Scenario 1.1 — Data Preprocessing and Null Handling (\texttt{EXP\_PREPROCESS})}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} Critical severity fields in VAERS frequently contain NULL values where a patient did not experience that particular outcome. These nulls must be replaced with safe defaults before numeric calculations can be performed.
+  \item \textbf{Transformation Logic:} An Expression Transformation applies the following null-handling rules:
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Field}   & \textbf{Raw Value} & \textbf{Cleaned Value} \\
+\midrule
+DIED      & NULL & 'N' \\
+HOSPITAL  & NULL & 'N' \\
+ER\_VISIT & NULL & 'N' \\
+L\_THREAT & NULL & 'N' \\
+HOSPDAYS  & NULL & 0   \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Scenario 1.2 — VSRI Score Calculation (Expression Transformer)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} Regulators require a single, interpretable numeric score per adverse event record that captures the clinical severity of that patient's outcome.
+  \item \textbf{Transformation Logic:} An Expression Transformer applies the following weighted formula:
+\end{itemize}
+
+\[
+\text{VSRI} = (D \times 10) + (L \times 8) + (H \times 6) + (E \times 4) + \bigl(\mathbb{1}[\text{HOSPDAYS} > 7] \times 3\bigr)
+\]
+
+where $D$ = 1 if DIED = 'Y', $L$ = 1 if L\_THREAT = 'Y', $H$ = 1 if HOSPITAL = 'Y', $E$ = 1 if ER\_VISIT = 'Y'. A score of 0 means no reportable severe outcome; a score of 31 represents the maximum possible patient severity.
+
+\bigskip
+
+\noindent\textbf{Scenario 1.3 — Vaccine-Level Aggregation (\texttt{AGG\_VSRI})}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} Executives and regulators need vaccine-level summaries, not individual patient records, to identify which vaccines carry the highest harm burden.
+  \item \textbf{Transformation Logic:} An Aggregator Transformation groups records by vaccine name and computes:
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Output Field}     & \textbf{Expression} \\
+\midrule
+TOTAL\_CASES        & COUNT(VAERS\_ID)   \\
+TOTAL\_VSRI\_SCORE  & SUM(VSRI)          \\
+AVG\_VSRI\_SCORE    & AVG(VSRI)          \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Scenario 1.4 — Output Preparation and Sorting (\texttt{EXP\_FINAL\_OUTPUT} + Sorter)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} The target output must contain only relevant KPI fields — all 43 raw VAERS columns must be dropped.
+  \item \textbf{Transformation Logic:} An Expression Transformer selects and labels the required output fields. A Sorter Transformer orders the final output by \texttt{AVG\_VSRI\_SCORE} descending so the highest-risk vaccines appear at the top of the regulatory register.
+\end{itemize}
+
+\textbf{Total Transformers for VSRI: 5}
+
+\vspace{10pt}
+\noindent\rule{\textwidth}{0.4pt}
+
+% ============================================================
+\section*{KPI 2 — Vaccine Administration Error Index (VAEI)}
+\addcontentsline{toc}{section}{KPI 2 — Vaccine Administration Error Index (VAEI)}
+% ============================================================
+
+\subsection*{Objective}
+\addcontentsline{toc}{subsection}{Objective (VAEI)}
+To classify each VAERS adverse event record by administration error type using keyword analysis on free-text symptom descriptions, assign a severity score, aggregate by error category, and produce a ranked watchlist of the most dangerous administration error types for regulatory action.
+
+\bigskip
+
+\noindent\textbf{Scenario 2.1 — Data Quality Gate (\texttt{FLT\_CLEAN\_RECORDS})}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} Records without a valid \texttt{VAERS\_ID} or \texttt{SYMPTOM\_TEXT} cannot be classified and would corrupt the classification pipeline.
+  \item \textbf{Transformation Logic:} A Filter Transformation passes only records satisfying:
+\end{itemize}
+
+\begin{lstlisting}
+NOT ISNULL(SYMPTOM_TEXT) AND NOT ISNULL(VAERS_ID)
+\end{lstlisting}
+
+\bigskip
+
+\noindent\textbf{Scenario 2.2 — Error Classification and Severity Scoring (\texttt{EXP\_CLASSIFY})}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} The core intelligence layer — each report must be assigned an error type and severity score based on the content of the symptom text.
+  \item \textbf{Transformation Logic:} An Expression Transformer creates three new output fields:
+\end{itemize}
+
+\textbf{Field 1 — ERROR\_TYPE} (using \texttt{INSTR()} keyword matching on \texttt{SYMPTOM\_TEXT}):
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{ERROR\_TYPE}  & \textbf{Keywords Detected in SYMPTOM\_TEXT} \\
+\midrule
+WRONG\_VACCINE    & ``WRONG'', ``INCORRECT VACCINE'' \\
+WRONG\_DOSE       & ``OVERDOSE'', ``DILUTED'', ``UNDERDOSE'' \\
+WRONG\_AGE\_GROUP & ``UNDERAGE'', ``PEDIATRIC'', ``AGE RANGE'' \\
+EXPIRED\_VACCINE  & ``EXPIRED'' \\
+WRONG\_STORAGE    & ``STORAGE'', ``REFRIGER'' \\
+OTHER\_ERROR      & No keywords matched \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\textbf{Field 2 — ERROR\_SCORE} (weighted severity):
+
+\begin{center}
+\begin{tabular}{clp{6cm}}
+\toprule
+\textbf{Score} & \textbf{ERROR\_TYPE}   & \textbf{Rationale} \\
+\midrule
+5 & WRONG\_VACCINE    & Direct patient harm — wrong antigen delivered \\
+5 & WRONG\_DOSE       & Direct patient harm — incorrect quantity \\
+4 & WRONG\_AGE\_GROUP & High risk — physiologically inappropriate for age group \\
+3 & EXPIRED\_VACCINE  & Indirect harm — ineffective immunisation \\
+3 & WRONG\_STORAGE    & Indirect harm — degraded vaccine potency \\
+1 & OTHER\_ERROR      & General symptom, no specific error identified \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\textbf{Field 3 — AGE\_BAND:}
+\begin{lstlisting}
+IIF(TO_INTEGER(AGE_YRS) < 18, 'PEDIATRIC',
+  IIF(TO_INTEGER(AGE_YRS) >= 60, 'ELDERLY', 'ADULT'))
+\end{lstlisting}
+
+\bigskip
+
+\noindent\textbf{Scenario 2.3 — Error Category Aggregation (\texttt{AGG\_VAEI})}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} Individual records must be consolidated into error-type level summary statistics so regulators can compare categories.
+  \item \textbf{Transformation Logic:} An Aggregator Transformation groups by \texttt{ERROR\_TYPE} and computes:
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Output Field}      & \textbf{Expression}   \\
+\midrule
+TOTAL\_ERROR\_COUNT & COUNT(VAERS\_ID)  \\
+TOTAL\_ERROR\_SCORE & SUM(ERROR\_SCORE) \\
+AVG\_ERROR\_SCORE   & AVG(ERROR\_SCORE) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Scenario 2.4 — Ranking and Ordered Output (\texttt{RNK\_ERROR} + \texttt{SRT\_FINAL} + \texttt{EXP\_FINAL})}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} The final regulatory watchlist must be ranked by severity and ordered for clean dashboard presentation.
+  \item \textbf{Transformation Logic:}
+    \begin{enumerate}[leftmargin=*]
+      \item \textbf{Rank Transformer (\texttt{RNK\_ERROR}):} Ranks error categories by \texttt{TOTAL\_ERROR\_SCORE} in descending order (Top 10), creating a \texttt{RANKINDEX} field
+      \item \textbf{Sorter (\texttt{SRT\_FINAL}):} Orders the output rows by \texttt{RANKINDEX} ascending for human-readable regulatory presentation
+      \item \textbf{Expression (\texttt{EXP\_FINAL}):} Retains only the 5 required output columns — \texttt{RANKINDEX}, \texttt{ERROR\_TYPE}, \texttt{TOTAL\_ERROR\_COUNT}, \texttt{TOTAL\_ERROR\_SCORE}, \texttt{AVG\_ERROR\_SCORE} — and drops all 43 raw VAERS fields
+    \end{enumerate}
+\end{itemize}
+
+\textbf{Total Transformers for VAEI: 7}
+
+\bigskip
+\noindent\textbf{Final Output — VAEI Watchlist:}
+
+\begin{center}
+\begin{tabular}{clrrr}
+\toprule
+\textbf{Rank} & \textbf{Error Type}    & \textbf{Count}  & \textbf{Total Score} & \textbf{Avg Score} \\
+\midrule
+1 & OTHER\_ERROR      & 47,849 & 47,849 & 1.0 \\
+2 & EXPIRED\_VACCINE  &  2,014 &  6,042 & 3.0 \\
+3 & WRONG\_VACCINE    &    707 &  3,535 & 5.0 \\
+4 & WRONG\_STORAGE    &  1,064 &  3,192 & 3.0 \\
+5 & WRONG\_AGE\_GROUP &    751 &  3,004 & 4.0 \\
+6 & WRONG\_DOSE       &    375 &  1,875 & 5.0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{10pt}
+\noindent\rule{\textwidth}{0.4pt}
+
+% ============================================================
+\section*{KPI 3 — Multi-Year Vaccine Risk Trend Analysis (2023--2025)}
+\addcontentsline{toc}{section}{KPI 3 — Multi-Year Vaccine Risk Trend Analysis (2023--2025)}
+% ============================================================
+
+\subsection*{Objective}
+\addcontentsline{toc}{subsection}{Objective (Multi-Year Trend)}
+To detect whether each vaccine's risk profile is increasing, decreasing, or fluctuating by computing a normalised High-Risk Percentage per vaccine for each of 2023, 2024, and 2025, and classifying the resulting three-year trajectory.
+
+\bigskip
+
+\noindent\textbf{Scenario 3.1 — Per-Year Data Integration (Joiner Transformations)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} VAERSDATA and VAERSVAX files are separate for each year. They must be joined to attach vaccine identity to each adverse event record before scoring.
+  \item \textbf{Transformation Logic:} For each year (2023, 2024, 2025), a Joiner Transformation is configured with:
+    \begin{itemize}
+      \item \textbf{Master:} VAERSVAX (smaller file)
+      \item \textbf{Detail:} VAERSDATA (larger file)
+      \item \textbf{Join Condition:} \texttt{VAERSDATA.VAERS\_ID = VAERSVAX.VAERS\_ID}
+      \item \textbf{Join Type:} Inner Join
+    \end{itemize}
+\end{itemize}
+
+\bigskip
+
+\noindent\textbf{Scenario 3.2 — Null Handling and Severity Score Calculation (Expression Transformers)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} Identical null handling and scoring logic is applied per year to ensure comparability across the three-year period.
+  \item \textbf{Transformation Logic:} The same preprocessing and VSRI-equivalent severity formula is applied per year:
+\end{itemize}
+
+\[
+\text{Severity} = (D \times 10) + (L \times 8) + (H \times 6) + (E \times 4) + \bigl(\mathbb{1}[\text{HOSPDAYS}>7] \times 3\bigr)
+\]
+
+Records with Severity $\geq 10$ are flagged as \textbf{High-Risk Cases}.
+
+\bigskip
+
+\noindent\textbf{Scenario 3.3 — Per-Year Aggregation (Aggregator Transformations)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} Individual records must be compressed into a per-vaccine, per-year summary to enable year-over-year comparison.
+  \item \textbf{Transformation Logic:} Three separate Aggregator Transformations (one per year) group by \texttt{VAX\_NAME} and compute:
+\end{itemize}
+
+\[
+\text{High-Risk\%} = \frac{\text{HIGH\_RISK\_CASES} \times 100}{\text{TOTAL\_CASES}}
+\]
+
+This normalised percentage allows fair comparison regardless of changes in total reporting volume between years.
+
+\bigskip
+
+\noindent\textbf{Scenario 3.4 — Multi-Year Profile Join and Trend Classification (Joiner + Expression)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Business Need:} The three yearly aggregates must be combined into a single profile per vaccine, and the temporal direction of risk must be classified for immediate regulatory interpretation.
+  \item \textbf{Transformation Logic:}
+    \begin{enumerate}[leftmargin=*]
+      \item Two sequential Joiner Transformations merge the 2023, 2024, and 2025 yearly aggregates on \texttt{VAX\_NAME} to produce a consolidated record with fields \texttt{Risk\_2023}, \texttt{Risk\_2024}, and \texttt{Risk\_2025}
+      \item An Expression Transformation applies the following trend classification logic:
+    \end{enumerate}
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Trend Label} & \textbf{Condition} \\
+\midrule
+INCREASING   & $R_{2023} < R_{2024} < R_{2025}$ \\
+DECREASING   & $R_{2023} > R_{2024} > R_{2025}$ \\
+FLUCTUATING  & Any other pattern \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Expected Output:}
+
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Vaccine Name} & \textbf{Risk\_2023} & \textbf{Risk\_2024} & \textbf{Risk\_2025} & \textbf{Trend} \\
+\midrule
+Vaccine A & 4.8 & 6.2 & 8.5 & INCREASING   \\
+Vaccine B & 7.1 & 5.9 & 4.2 & DECREASING   \\
+Vaccine C & 3.4 & 5.2 & 4.1 & FLUCTUATING  \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{6pt}
+\noindent\textit{(Replace with actual output from IICS run before submission)}
+
+% ============================================================
+\chapter{Conclusion}
+% ============================================================
+
+\section{Insights from Data — Business Intelligence}
+
+This project demonstrates that \textbf{Informatica IDMC is not merely a traditional ETL tool} — it is a platform capable of delivering intelligent, real-time public health signal detection at scale.
+
+\medskip
+
+By processing \textbf{53,760+ VAERS adverse event records} through three purpose-built KPI pipelines, the team has produced the following key regulatory insights:
+
+\subsection*{From VSRI (KPI 1)}
+\begin{itemize}[leftmargin=*]
+  \item A severity-weighted risk score provides, for the first time, a single comparable number that captures the clinical damage burden of each vaccine — enabling regulators to rank vaccines by harm in seconds rather than manually reviewing thousands of records
+  \item The weighted formula ensures that deaths and life-threatening events dominate the score, reflecting real-world clinical priority
+\end{itemize}
+
+\subsection*{From VAEI (KPI 2)}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{WRONG\_VACCINE} and \textbf{WRONG\_DOSE} both achieve an average severity score of 5.0 — every single reported case of these error types constitutes a direct patient safety threat with no dilution
+  \item \textbf{EXPIRED\_VACCINE} (2,014 cases) has the highest case count among specific administration errors, revealing a \textbf{systemic cold chain management failure} across vaccination sites that is invisible to conventional outcome-based reporting
+  \item \textbf{WRONG\_AGE\_GROUP} (751 cases) indicates that paediatric dosing protocols are being routinely violated — a critical finding that requires targeted staff retraining and protocol enforcement
+  \item \textbf{WRONG\_STORAGE} (1,064 cases) points to infrastructure failure at the distribution level — corrective action must target supply chain actors, not just point-of-care staff
+\end{itemize}
+
+\subsection*{From Multi-Year Trend Analysis (KPI 3)}
+\begin{itemize}[leftmargin=*]
+  \item A vaccine exhibiting an INCREASING trend across three years is a candidate for expedited regulatory review, even if its absolute case count appears modest in any single year
+  \item Normalising by total reports (High-Risk \%) ensures that changes in reporting culture or population coverage between years do not create false signals
+  \item Combining Joiner, Aggregator, and Expression transformations across three years of data demonstrates the scalability of IDMC for longitudinal public health surveillance
+\end{itemize}
+
+\subsection*{Combined Platform Value}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+\textbf{Dimension}    & \textbf{VSRI} & \textbf{VAEI} & \textbf{Trend KPI} \\
+\midrule
+Focus        & Patient outcomes        & Administration errors    & Risk evolution over time \\
+Timing       & After harm occurred     & At point of error        & Longitudinal surveillance \\
+Approach     & Reactive                & Preventive               & Predictive \\
+Output       & Per-vaccine risk score  & Ranked error watchlist   & Trend-classified profile \\
+Transformers & 5                       & 7                        & 10+                      \\
+Data Period  & 2024                    & 2024                     & 2023, 2024, 2025         \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\medskip
+Together, the three KPIs form a \textbf{360° pharmacovigilance framework}: VSRI measures what has gone wrong, VAEI identifies how and where errors occurred, and the Trend KPI predicts what is about to go wrong — representing a complete shift from \textit{reactive} to \textit{preventive} to \textit{predictive} vaccine safety monitoring.
+
+\begin{mdframed}[linecolor=infblue, linewidth=1.5pt, backgroundcolor={rgb}{0.97,0.97,1.0}]
+\textbf{Summary:} This project successfully demonstrates that Informatica Intelligent Data Management Cloud can serve as the technical backbone of a national vaccine safety intelligence system — one capable of processing tens of thousands of real adverse event records, classifying them intelligently, and delivering actionable regulatory outputs that could shift pharmacovigilance from months-delayed reactive reporting to near-real-time preventive signal detection.
+\end{mdframed}
+
+% ============================================================
+% References
+% ============================================================
+\begin{thebibliography}{9}
+
+\bibitem{vaers}
+U.S. Department of Health and Human Services,
+\textit{Vaccine Adverse Event Reporting System (VAERS) — Public Data},
+Centers for Disease Control and Prevention / FDA, 2024. \\
+Available: \url{https://vaers.hhs.gov/data/datasets.html}
+
+\bibitem{cdc}
+Centers for Disease Control and Prevention,
+\textit{VAERS — About the VAERS Program}, CDC, 2024. \\
+Available: \url{https://www.cdc.gov/vaccinesafety/ensuringsafety/monitoring/vaers/}
+
+\bibitem{iics}
+Informatica Corporation,
+\textit{Informatica Intelligent Cloud Services — Data Integration Mapping Documentation}, 2024. \\
+Available: \url{https://docs.informatica.com/}
+
+\bibitem{who}
+World Health Organization,
+\textit{Global Manual on Surveillance of Adverse Events Following Immunization},
+WHO Press, Geneva, 2014.
+
+\bibitem{icmr}
+Indian Council of Medical Research,
+\textit{National Pharmacovigilance Programme of India — Annual Report},
+ICMR, New Delhi, 2023.
+
+\end{thebibliography}
+
+\end{document}

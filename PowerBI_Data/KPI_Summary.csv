@@ -1,0 +1,14 @@
+KPI_Name,Metric,Value,Unit
+VAERS Overview,Total Records,53760,Count
+VAERS Overview,Specific Admin Errors,4911,Count
+VAERS Overview,Actionable Error Rate,9.1,Percent
+VAERS Overview,Total Error Score,65497,Score
+VSRI,Max Possible Score Per Record,31,Points
+VSRI,High Risk Threshold,10,Points
+VSRI,Transformers Used,5,Count
+VAEI,Error Types Classified,6,Count
+VAEI,Transformers Used,7,Count
+VAEI,Peak Avg Severity Score,5.0,Points
+Trend KPI,Years Analysed,3,Years
+Trend KPI,Vaccines Tracked,5,Count
+Trend KPI,Transformers Used,10,Count
