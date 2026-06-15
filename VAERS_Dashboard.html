@@ -287,7 +287,7 @@
         <div class="chart-panel">
           <div class="chart-header">
             <div class="chart-title">Sum of Total Score by Error Type</div>
-            <span class="chart-badge cb-red">Total score: 65,497</span>
+            <span class="chart-badge cb-red" id="donut-total-badge">Total score: 65,497</span>
           </div>
           <div class="chart-sub">Each slice = proportion of total severity burden · 2024 VAERS</div>
           <div class="chart-body"><div class="canvas-wrap"><canvas id="donutScore" height="230"></canvas></div></div>
@@ -989,7 +989,12 @@ function initOverviewCharts() {
     data:{ labels:d.map(x=>x.type), datasets:[{ data:d.map(x=>x.total), backgroundColor:PALETTE, borderWidth:2, borderColor:"#fff", hoverOffset:8 }] },
     options:{ responsive:true, maintainAspectRatio:false, cutout:"58%",
       plugins:{ legend:{ display:true, position:"right", labels:{boxWidth:12,font:{size:10}} },
-        tooltip:{ callbacks:{ label: c => " "+c.label+": "+c.parsed.toLocaleString()+" pts ("+((c.parsed/65497)*100).toFixed(1)+"%)" } } } }
+        tooltip:{ callbacks:{ label: c => {
+          const dataset = c.chart.data.datasets[c.datasetIndex];
+          const total = dataset.data.reduce((sum, val) => sum + val, 0);
+          const percent = ((c.parsed / total) * 100).toFixed(2);
+          return " " + c.label + ": " + c.parsed.toLocaleString() + " pts (" + percent + "%)";
+        } } } } }
   });
 
   avgChart = makeBar("avgScore", d.map(x=>x.type), d.map(x=>x.avg),
@@ -1202,6 +1207,8 @@ function setFilter(f) {
   donutChart.data.labels = d.map(x=>x.type);
   donutChart.data.datasets[0].data = d.map(x=>x.total);
   donutChart.update();
+  const totalScore = d.reduce((sum, x) => sum + x.total, 0);
+  document.getElementById("donut-total-badge").textContent = "Total score: " + totalScore.toLocaleString();
   // Update avg
   avgChart.data.labels = d.map(x=>x.type);
   avgChart.data.datasets[0].data = d.map(x=>x.avg);
